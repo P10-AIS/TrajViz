@@ -1,0 +1,10 @@
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
+    volumes:
+      - ..:/workspaces/trajviz:cached
+    ports:
+      - 4000:4000
+    command: /bin/sh -c "while sleep 1000; do :; done"
+  redis:
+    image: redis:7
