@@ -20,23 +20,36 @@ export default function CanvasLayer({ drawMethod }: CanvasLayerProps) {
     canvas.style.position = "absolute";
     canvas.style.top = "0";
     canvas.style.left = "0";
-    canvas.style.pointerEvents = "none"; // optional but nice
+    canvas.style.zIndex = "1000";
+    canvas.style.pointerEvents = "none";
 
-    const overlayPane = map.getPanes().overlayPane;
-    overlayPane.appendChild(canvas);
+    const mapContainer = map.getContainer();
+    mapContainer.appendChild(canvas);
     canvasRef.current = canvas;
 
-    function redraw() {
+    const redraw = () => {
       if (!canvasRef.current) return;
       drawMethod({ map, canvas: canvasRef.current });
-    }
+    };
 
+    const resizeCanvas = () => {
+      if (!canvasRef.current) return;
+      const size = map.getSize();
+      canvasRef.current.width = size.x;
+      canvasRef.current.height = size.y;
+      redraw();
+    };
+
+    map.on("move zoom", redraw);
+    map.on("resize", resizeCanvas);
+
+    resizeCanvas();
     redraw();
-    map.on("move zoom resize zoomend moveend", redraw);
 
     return () => {
-      map.off("move zoom resize zoomend moveend", redraw);
-      if (canvasRef.current) overlayPane.removeChild(canvasRef.current);
+      map.off("move zoom", redraw);
+      map.off("resize", resizeCanvas);
+      if (canvasRef.current) mapContainer.removeChild(canvasRef.current);
     };
   }, [map, drawMethod]);
 
