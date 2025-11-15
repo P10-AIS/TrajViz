@@ -1,4 +1,5 @@
 import type { Trajectory } from "../types/Trajectory";
+import { getBoundingBox } from "./bounds";
 
 // type RawPoint = {
 //     lat: number;
@@ -15,12 +16,19 @@ type RawPoint = Array<number>
 type RawTrajectory = Array<RawPoint>
 
 export function parseTrajectory(data: RawTrajectory[]): Trajectory[] {
-    return data.map((traj, idx) => ({
-        id: idx,
-        points: traj.map((pt) => ({
+    return data.map((traj, idx) => {
+        const messages = traj.map((pt) => ({
             lat: pt[0],
             lng: pt[1],
-            heading: pt[7],
-        })),
-    }));
+            heading: pt[5],
+        }));
+
+        return {
+            id: idx,
+            boundingBox: getBoundingBox(messages),
+            messages,
+        };
+    })
 }
+
+

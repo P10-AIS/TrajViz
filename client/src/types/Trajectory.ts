@@ -1,6 +1,8 @@
-import type { Point } from "./Point";
+import type { Bound } from "./Bound";
+import type { AisMessage } from "./AisMessage";
 
 export type Trajectory = {
   id: number;
-  points: Point[];
+  boundingBox: Bound
+  messages: AisMessage[];
 };

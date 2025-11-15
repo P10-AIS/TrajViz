@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import MapWithCanvas from './components/MapWithCanvas';
-import type { Trajectory } from './types/Trajectory';
 import { drawTrajectory } from './utils/draw';
 import CanvasLayer from './components/CanvasLayer';
 import { parseTrajectory } from './utils/parse';
+import type { TrajectoriesByZoom } from './types/TrajectoriesByZoom';
+import { prepareTrajectories } from './utils/prepare';
 
 function App() {
-  const [trajectories, setTrajectories] = useState<Trajectory[]>([]);
+  const [trajectories, setTrajectories] = useState<TrajectoriesByZoom>({});
 
   useEffect(() => {
     const fetchLatestTrajectory = async () => {
@@ -15,7 +16,8 @@ function App() {
         const data = await response.json();
         const { trajectory } = data;
         const parsed = parseTrajectory(trajectory);
-        setTrajectories(parsed);
+        const zoomed = prepareTrajectories(parsed);
+        setTrajectories(zoomed);
       } catch (err) {
         console.error('Failed to fetch trajectory:', err);
       }
