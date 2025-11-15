@@ -1,14 +1,12 @@
 
 import { MapContainer, TileLayer } from "react-leaflet";
-import type { Trajectory } from "../types/Trajectory";
-import { drawTrajectory } from "../utils/draw";
-import CanvasLayer from "./CanvasLayer";
+import type { JSX } from "react";
 
-interface props {
-  trajectories: Trajectory[]
+interface Props {
+  children: JSX.Element
 }
 
-function MapWithCanvas({ trajectories }: props) {
+function MapWithCanvas({ children }: Props) {
   return (
     <MapContainer
       center={[56.15674, 10.21076]}
@@ -24,7 +22,7 @@ function MapWithCanvas({ trajectories }: props) {
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         noWrap={true}
       />
-      <CanvasLayer drawMethod={(info) => drawTrajectory(trajectories, info)} />
+      {children}
     </MapContainer>
   );
 }

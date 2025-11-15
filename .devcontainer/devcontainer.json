@@ -6,5 +6,6 @@
 	"dockerComposeFile": [
 		"docker-compose.yml"
 	],
-	"service": "devcontainer"
+	"service": "devcontainer",
+	"postCreateCommand": "cd client && npm ci && cd ../server && npm ci"
 }

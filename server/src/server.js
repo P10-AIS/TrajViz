@@ -29,30 +29,52 @@ wss.on('connection', (ws) => {
   })
 })
 
-app.post('/trajectory', express.raw({ type: 'application/json', limit: '200mb' }), async (req, res) => {
-  const compressedBuffer = req.body
-  console.log('Received compressed trajectory data:', compressedBuffer.length, 'bytes')
+app.post('/trajectory', express.raw({ type: '*/*', limit: '200mb' }), async (req, res) => {
+  try {
+    const compressedBuffer = req.body
+    console.log('Received compressed trajectory data:', compressedBuffer.length, 'bytes')
 
-  const compressedBase64 = compressedBuffer.toString('base64')
-  await redis.set(TRAJECTORY_KEY, compressedBase64)
+    // Store as Base64 in Redis
+    const compressedBase64 = compressedBuffer.toString('base64')
+    await redis.set(TRAJECTORY_KEY, compressedBase64)
 
-  wss.clients.forEach(client => {
-    if (client.readyState === 1) client.send('new data available')
-  })
+    // Broadcast to WebSocket clients
+    wss.clients.forEach(client => {
+      if (client.readyState === 1) client.send(JSON.stringify({ event: 'new_data_available' }))
+    })
 
-  res.send({ status: 'stored_and_broadcasted' })
+    res.json({ status: 'stored_and_broadcasted' })
+  } catch (err) {
+    console.error('Error storing trajectory:', err)
+    res.status(500).json({ error: 'Failed to store trajectory' })
+  }
 })
 
-
+// --- GET /latest ---
 app.get('/latest', async (req, res) => {
-  const compressedBase64 = await redis.get(TRAJECTORY_KEY)
-  if (!compressedBase64) return res.json({ trajectory: [] })
+  try {
+    const compressedBase64 = await redis.get(TRAJECTORY_KEY)
+    if (!compressedBase64) return res.json({ trajectory: [] })
 
-  zlib.gunzip(Buffer.from(compressedBase64, 'base64'), (err, decoded) => {
-    if (err) return res.status(500).send('Failed to decompress')
-    const data = JSON.parse(decoded.toString())
-    res.json(data)
-  })
+    const buffer = Buffer.from(compressedBase64, 'base64')
+    zlib.gunzip(buffer, (err, decoded) => {
+      if (err) {
+        console.error('Decompression error:', err)
+        return res.status(500).json({ error: 'Failed to decompress trajectory data' })
+      }
+
+      try {
+        const data = JSON.parse(decoded.toString())
+        res.json(data)
+      } catch (parseErr) {
+        console.error('JSON parse error:', parseErr)
+        res.status(500).json({ error: 'Failed to parse trajectory JSON' })
+      }
+    })
+  } catch (err) {
+    console.error('Unexpected error in /latest:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
 })
 
 app.get('/', (req, res) => {

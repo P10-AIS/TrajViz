@@ -5,6 +5,15 @@ services:
       - ..:/workspaces/trajviz:cached
     ports:
       - 4000:4000
+      - 5173:5173
     command: /bin/sh -c "while sleep 1000; do :; done"
+    networks:
+      - TrajNet
   redis:
     image: redis:7
+    networks:
+      - TrajNet
+
+networks:
+  TrajNet:
+    driver: bridge

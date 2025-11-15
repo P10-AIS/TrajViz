@@ -1,6 +1,6 @@
 import type { Point } from "./Point";
 
 export type Trajectory = {
-  id: string;
+  id: number;
   points: Point[];
 };
