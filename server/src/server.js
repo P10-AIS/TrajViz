@@ -111,21 +111,6 @@ app.get('/image/:name', async (req, res) => {
 
 //  ----------------------------------------------------------
 
-app.get("/tiles/:z/:x/:y.png", async (req, res) => {
-  const { z, x, y } = req.params;
-  const url = `https://maps.omniscale.net/v2/private-william-woldum-2c115f59/style.default/${z}/${x}/${y}.png`;
-
-  const response = await fetch(url);
-  const buffer = await response.arrayBuffer();
-
-  console.log(response);
-
-  res.set("Content-Type", "image/png");
-  res.set("Access-Control-Allow-Origin", "*");
-  res.send(Buffer.from(buffer));
-});
-
-
 app.get('/', (req, res) => {
   res.send('Trajectory Server is running')
 })
