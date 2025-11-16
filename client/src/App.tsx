@@ -20,7 +20,7 @@ function App() {
           <Map3034>
             <>
               {ctx.showMapTiles && <TileLayer3034 />}
-              {ctx.showDepthImage && <CanvasLayer drawMethod={(info) => drawDepthImage(ctx.depthImage, ctx.depthImageOpacity, info)} />}
+              {ctx.showDepthImage && <CanvasLayer drawMethod={(info) => drawDepthImage(ctx.depthImage3034, ctx.depthImageOpacity, info)} />}
               {ctx.eecOutlineVisible && <CanvasLayer drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
               {ctx.trajectoriesVisible && <CanvasLayer drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
             </>
@@ -28,7 +28,7 @@ function App() {
           <Map3857>
             <>
               {ctx.showMapTiles && <TileLayer3857 />}
-              {ctx.showDepthImage && <CanvasLayer drawMethod={(info) => drawDepthImage(ctx.depthImage, ctx.depthImageOpacity, info)} />}
+              {ctx.showDepthImage && <CanvasLayer drawMethod={(info) => drawDepthImage(ctx.depthImage3857, ctx.depthImageOpacity, info)} />}
               {ctx.eecOutlineVisible && <CanvasLayer drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
               {ctx.trajectoriesVisible && <CanvasLayer drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
             </>

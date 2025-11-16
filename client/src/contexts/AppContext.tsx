@@ -17,8 +17,10 @@ interface AppContextType {
     setNumTrajectoriesVisible: (num: number) => void;
     fullTrajectoryFidelity: boolean;
     setFullTrajectoryFidelity: (fidelity: boolean) => void;
-    depthImage: GeoImage | null;
-    setDepthImage: (image: GeoImage | null) => void;
+    depthImage3034: GeoImage | null;
+    setDepthImage3034: (image: GeoImage | null) => void;
+    depthImage3857: GeoImage | null;
+    setDepthImage3857: (image: GeoImage | null) => void;
     showMapTiles: boolean;
     setShowMapTiles: (show: boolean) => void;
     showDepthImage: boolean;
@@ -38,7 +40,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [trajectoriesVisible, setTrajectoriesVisible] = useState(true);
     const [numTrajectoriesVisible, setNumTrajectoriesVisible] = useState(0);
     const [fullTrajectoryFidelity, setFullTrajectoryFidelity] = useState(false);
-    const [depthImage, setDepthImage] = useState<GeoImage | null>(null);
+    const [depthImage3034, setDepthImage3034] = useState<GeoImage | null>(null);
+    const [depthImage3857, setDepthImage3857] = useState<GeoImage | null>(null);
     const [showMapTiles, setShowMapTiles] = useState(true);
     const [showDepthImage, setShowDepthImage] = useState(false);
     const [depthImageOpacity, setDepthImageOpacity] = useState(1);
@@ -57,8 +60,10 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setNumTrajectoriesVisible,
         fullTrajectoryFidelity,
         setFullTrajectoryFidelity,
-        depthImage,
-        setDepthImage,
+        depthImage3034: depthImage3034,
+        setDepthImage3034: setDepthImage3034,
+        depthImage3857: depthImage3857,
+        setDepthImage3857: setDepthImage3857,
         showMapTiles,
         setShowMapTiles,
         showDepthImage,
