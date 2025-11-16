@@ -31,6 +31,16 @@ function SettingsPanel() {
                         </div>
                         <hr className="border-slate-300"></hr>
 
+                        {/* espg3034 toggle */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Use EPSG:3034</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.showESPG3034}
+                                onChange={(e) => ctx.setShowESPG3034(e.target.checked)}
+                            />
+                        </div>
+
                         {/* show map tiles toggle */}
                         <div className="flex flex-row items-center justify-between">
                             <div>Show Map Tiles</div>

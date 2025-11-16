@@ -25,6 +25,8 @@ interface AppContextType {
     setShowDepthImage: (show: boolean) => void;
     depthImageOpacity: number;
     setDepthImageOpacity: (opacity: number) => void;
+    showESPG3034: boolean;
+    setShowESPG3034: (show: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [showMapTiles, setShowMapTiles] = useState(true);
     const [showDepthImage, setShowDepthImage] = useState(false);
     const [depthImageOpacity, setDepthImageOpacity] = useState(1);
+    const [showESPG3034, setShowESPG3034] = useState(true);
 
     const value: AppContextType = {
         trajectories,
@@ -62,6 +65,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowDepthImage,
         depthImageOpacity,
         setDepthImageOpacity,
+        showESPG3034,
+        setShowESPG3034,
     };
 
     return (

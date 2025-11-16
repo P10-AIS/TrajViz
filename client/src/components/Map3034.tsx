@@ -2,7 +2,7 @@ import { MapContainer, ZoomControl } from "react-leaflet";
 import type { JSX } from "react";
 import { CRS_3034 } from "../assets/crs3034";
 
-function Map({ children }: { children: JSX.Element }) {
+function Map3034({ children }: { children: JSX.Element }) {
   return (
     <MapContainer
       crs={CRS_3034}
@@ -18,4 +18,4 @@ function Map({ children }: { children: JSX.Element }) {
   );
 }
 
-export default Map;
+export default Map3034;
