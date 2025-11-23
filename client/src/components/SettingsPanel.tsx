@@ -51,13 +51,13 @@ function SettingsPanel() {
                             />
                         </div>
 
-                        {/* eec toggle */}
+                        {/* eez toggle */}
                         <div className="flex flex-row items-center justify-between">
-                            <div>Show EEC</div>
+                            <div>Show EEZ</div>
                             <input
                                 type="checkbox"
-                                checked={ctx.eecOutlineVisible}
-                                onChange={(e) => ctx.setEecOutlineVisible(e.target.checked)}
+                                checked={ctx.eezOutlineVisible}
+                                onChange={(e) => ctx.setEezOutlineVisible(e.target.checked)}
                             />
                         </div>
 
@@ -78,6 +78,16 @@ function SettingsPanel() {
                                 type="checkbox"
                                 checked={ctx.fullTrajectoryFidelity}
                                 onChange={(e) => ctx.setFullTrajectoryFidelity(e.target.checked)}
+                            />
+                        </div>
+
+                        {/* full eez fidelity toggle */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Full EEZ Fidelity</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.fullEezFidelity}
+                                onChange={(e) => ctx.setFullEezFidelity(e.target.checked)}
                             />
                         </div>
 

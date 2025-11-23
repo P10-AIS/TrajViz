@@ -34,7 +34,7 @@ export function prepareTrajectories(trajectories: Trajectory[]): ZoomLevels<Traj
 }
 
 
-export function prepareEecPolygons(rawCoordinates: number[][][][]): ZoomLevels<Polygon[]> {
+export function prepareEezPolygons(rawCoordinates: number[][][][]): ZoomLevels<Polygon[]> {
     const polygonsBase = rawCoordinates.map((polygon) => {
         const outlineCoords = polygon[0].map((coord) => ({ lat: coord[1], lng: coord[0] }));
         const holesCoords = polygon.slice(1).map((ring) =>
@@ -94,14 +94,12 @@ export function prepareEecPolygons(rawCoordinates: number[][][][]): ZoomLevels<P
 }
 
 function simplify<T>(arr: T[], step: number): T[] {
-    if (arr.length === 0) return [];
+    if (arr.length <= 2) return arr;
 
-    const result = arr.filter((_, i) => i % step === 0);
+    const result = arr.slice(1, arr.length - 1).filter((_, i) => i % step === 0);
 
+    const first = arr[0];
     const last = arr[arr.length - 1];
-    if (result[result.length - 1] !== last) {
-        result.push(last);
-    }
 
-    return result;
+    return [first, ...result, last];
 }

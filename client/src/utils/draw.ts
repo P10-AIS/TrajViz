@@ -1,3 +1,4 @@
+import type { Map } from "leaflet";
 import type { drawInfo as DrawInfo } from "../components/CanvasLayer";
 import type { Bound } from "../types/Bound";
 import type { GeoImage } from "../types/GeoImage";
@@ -45,15 +46,23 @@ export const drawTrajectories = (
     ctx.lineWidth = 1;
     ctx.stroke();
 
+    const radius = 2;
 
-    const markerLength = 10;
-    drawPerpendicular(ctx, pts[0], pts[1], "green", markerLength);
-    drawPerpendicular(ctx, pts[pts.length - 1], pts[pts.length - 2], "red", markerLength);
+    ctx.beginPath();
+    ctx.arc(pts[0].x, pts[0].y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "green";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(pts[pts.length - 1].x, pts[pts.length - 1].y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
+    ctx.fill();
   });
 }
 
 export function drawPolygons(
   polygons: ZoomLevels<Polygon[]>,
+  fullFidelity: boolean,
   info: DrawInfo
 ) {
   const { map, canvas } = info;
@@ -69,8 +78,9 @@ export function drawPolygons(
   };
 
   const zoom = map.getZoom();
+  const trajZoom = fullFidelity ? 18 : zoom;
 
-  polygons[zoom]?.forEach((polygon) => {
+  polygons[trajZoom]?.forEach((polygon) => {
     if (!isBoundingBoxInView(polygon.outline.boundingBox, viewBox)) return;
 
     if (polygon.outline.points.length > 0) {
@@ -163,30 +173,4 @@ export const drawGeoImage = (
     width,
     height
   );
-};
-
-
-// Draw a perpendicular line at a point given the direction of the segment
-const drawPerpendicular = (ctx: CanvasRenderingContext2D, p1: { x: number, y: number }, p2: { x: number, y: number }, color: string, markerLength: number) => {
-  // Direction vector of the segment
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-
-  // Normalize
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len === 0) return;
-
-  const ndx = dx / len;
-  const ndy = dy / len;
-
-  // Perpendicular vector
-  const px = -ndy;
-  const py = ndx;
-
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(p1.x - px * markerLength / 2, p1.y - py * markerLength / 2);
-  ctx.lineTo(p1.x + px * markerLength / 2, p1.y + py * markerLength / 2);
-  ctx.stroke();
 };

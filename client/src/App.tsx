@@ -22,7 +22,7 @@ function App() {
               {ctx.showMapTiles && <TileLayer3034 />}
               {ctx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(ctx.depthImage3034, ctx.depthImageOpacity, info)} />}
               {ctx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(ctx.trafficImage3034, ctx.trafficImageOpacity, info)} />}
-              {ctx.eecOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
+              {ctx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, ctx.fullEezFidelity, info)} />}
               {ctx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
             </>
           </ Map3034>) : (
@@ -31,7 +31,7 @@ function App() {
               {ctx.showMapTiles && <TileLayer3857 />}
               {ctx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(ctx.depthImage3857, ctx.depthImageOpacity, info)} />}
               {ctx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(ctx.trafficImage3857, ctx.trafficImageOpacity, info)} />}
-              {ctx.eecOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
+              {ctx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, ctx.fullEezFidelity, info)} />}
               {ctx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
             </>
           </ Map3857>

@@ -1,8 +1,8 @@
 import { useEffect, type JSX } from "react";
 import { useAppContext } from "../contexts/AppContext";
 import { parseTrajectory } from "../utils/parse";
-import { prepareEecPolygons, prepareTrajectories } from "../utils/prepare";
-import eecData from '../assets/eec.json';
+import { prepareEezPolygons, prepareTrajectories } from "../utils/prepare";
+import eezData from '../assets/eez.json';
 import type { GeoImage } from "../types/GeoImage";
 
 
@@ -82,7 +82,7 @@ function DataLoader({ children }: { children: JSX.Element }) {
     }, []);
 
     useEffect(() => {
-        ctx.setPolygons(prepareEecPolygons(eecData.features[0].geometry.coordinates));
+        ctx.setPolygons(prepareEezPolygons(eezData.features[0].geometry.coordinates));
     }, []);
 
     return children;
