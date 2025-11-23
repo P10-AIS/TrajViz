@@ -21,12 +21,20 @@ interface AppContextType {
     setDepthImage3034: (image: GeoImage | null) => void;
     depthImage3857: GeoImage | null;
     setDepthImage3857: (image: GeoImage | null) => void;
+    trafficImage3034: GeoImage | null;
+    setTrafficImage3034: (image: GeoImage | null) => void;
+    trafficImage3857: GeoImage | null;
+    setTrafficImage3857: (image: GeoImage | null) => void;
     showMapTiles: boolean;
     setShowMapTiles: (show: boolean) => void;
     showDepthImage: boolean;
     setShowDepthImage: (show: boolean) => void;
+    showTrafficImage: boolean;
+    setShowTrafficImage: (show: boolean) => void;
     depthImageOpacity: number;
     setDepthImageOpacity: (opacity: number) => void;
+    trafficImageOpacity: number;
+    setTrafficImageOpacity: (opacity: number) => void;
     showESPG3034: boolean;
     setShowESPG3034: (show: boolean) => void;
 }
@@ -42,9 +50,13 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [fullTrajectoryFidelity, setFullTrajectoryFidelity] = useState(false);
     const [depthImage3034, setDepthImage3034] = useState<GeoImage | null>(null);
     const [depthImage3857, setDepthImage3857] = useState<GeoImage | null>(null);
+    const [trafficImage3034, setTrafficImage3034] = useState<GeoImage | null>(null);
+    const [trafficImage3857, setTrafficImage3857] = useState<GeoImage | null>(null);
     const [showMapTiles, setShowMapTiles] = useState(true);
     const [showDepthImage, setShowDepthImage] = useState(false);
+    const [showTrafficImage, setShowTrafficImage] = useState(false);
     const [depthImageOpacity, setDepthImageOpacity] = useState(1);
+    const [trafficImageOpacity, setTrafficImageOpacity] = useState(1);
     const [showESPG3034, setShowESPG3034] = useState(true);
 
     const value: AppContextType = {
@@ -64,12 +76,20 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setDepthImage3034: setDepthImage3034,
         depthImage3857: depthImage3857,
         setDepthImage3857: setDepthImage3857,
+        trafficImage3034: trafficImage3034,
+        setTrafficImage3034: setTrafficImage3034,
+        trafficImage3857: trafficImage3857,
+        setTrafficImage3857: setTrafficImage3857,
         showMapTiles,
         setShowMapTiles,
         showDepthImage,
         setShowDepthImage,
         depthImageOpacity,
         setDepthImageOpacity,
+        showTrafficImage,
+        setShowTrafficImage,
+        trafficImageOpacity,
+        setTrafficImageOpacity,
         showESPG3034,
         setShowESPG3034,
     };

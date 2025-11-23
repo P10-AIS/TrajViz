@@ -1,6 +1,6 @@
 
 import Map3034 from './components/Map3034';
-import { drawDepthImage, drawPolygons, drawTrajectories } from './utils/draw';
+import { drawGeoImage, drawPolygons, drawTrajectories } from './utils/draw';
 import CanvasLayer from './components/CanvasLayer';
 import SettingsPanel from './components/SettingsPanel';
 import { useAppContext } from './contexts/AppContext';
@@ -20,17 +20,19 @@ function App() {
           <Map3034>
             <>
               {ctx.showMapTiles && <TileLayer3034 />}
-              {ctx.showDepthImage && <CanvasLayer drawMethod={(info) => drawDepthImage(ctx.depthImage3034, ctx.depthImageOpacity, info)} />}
-              {ctx.eecOutlineVisible && <CanvasLayer drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
-              {ctx.trajectoriesVisible && <CanvasLayer drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
+              {ctx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(ctx.depthImage3034, ctx.depthImageOpacity, info)} />}
+              {ctx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(ctx.trafficImage3034, ctx.trafficImageOpacity, info)} />}
+              {ctx.eecOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
+              {ctx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
             </>
           </ Map3034>) : (
           <Map3857>
             <>
               {ctx.showMapTiles && <TileLayer3857 />}
-              {ctx.showDepthImage && <CanvasLayer drawMethod={(info) => drawDepthImage(ctx.depthImage3857, ctx.depthImageOpacity, info)} />}
-              {ctx.eecOutlineVisible && <CanvasLayer drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
-              {ctx.trajectoriesVisible && <CanvasLayer drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
+              {ctx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(ctx.depthImage3857, ctx.depthImageOpacity, info)} />}
+              {ctx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(ctx.trafficImage3857, ctx.trafficImageOpacity, info)} />}
+              {ctx.eecOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, info)} />}
+              {ctx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
             </>
           </ Map3857>
         )}

@@ -122,6 +122,32 @@ function SettingsPanel() {
                             />
                         </div>
 
+                        {/* show traffic image toggle */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Show Traffic Image</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.showTrafficImage}
+                                onChange={(e) => ctx.setShowTrafficImage(e.target.checked)}
+                            />
+                        </div>
+
+                        {/* traffic image opacity slider */}
+                        <div className="flex flex-col">
+                            <div className="flex flex-row justify-between">
+                                <div>Traffic Image Opacity: </div>
+                                <div>{ctx.trafficImageOpacity}</div>
+                            </div>
+                            <input
+                                type="range"
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={ctx.trafficImageOpacity}
+                                onChange={(e) => ctx.setTrafficImageOpacity(parseFloat(e.target.value))}
+                            />
+                        </div>
+
                     </div>
                 )
             }

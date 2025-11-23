@@ -3,6 +3,37 @@ import { useAppContext } from "../contexts/AppContext";
 import { parseTrajectory } from "../utils/parse";
 import { prepareEecPolygons, prepareTrajectories } from "../utils/prepare";
 import eecData from '../assets/eec.json';
+import type { GeoImage } from "../types/GeoImage";
+
+
+async function fetchMapImage(imageName: string): Promise<GeoImage> {
+    const response = await fetch(`http://localhost:4000/image/${imageName}`);
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+
+    const data = await response.json();
+
+    const img = new Image();
+    img.src = `data:${data.mimeType};base64,${data.data}`;
+
+    return new Promise((resolve, reject) => {
+        img.onload = () => {
+            resolve({
+                img,
+                area: {
+                    topRight: {
+                        lat: data.area.top_right.lat,
+                        lng: data.area.top_right.lon,
+                    },
+                    bottomLeft: {
+                        lat: data.area.bottom_left.lat,
+                        lng: data.area.bottom_left.lon,
+                    },
+                },
+            });
+        };
+        img.onerror = reject;
+    });
+}
 
 
 function DataLoader({ children }: { children: JSX.Element }) {
@@ -10,71 +41,26 @@ function DataLoader({ children }: { children: JSX.Element }) {
 
 
     useEffect(() => {
-        const fetchImage = async () => {
-            try {
-                const imageName = "depth_heatmap_3034";
-                const response = await fetch(`http://localhost:4000/image/${imageName}`);
-                if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
-
-                const data = await response.json();
-
-                const img = new Image();
-                img.src = `data:${data.mimeType};base64,${data.data}`;
-                img.onload = () => {
-                    ctx.setDepthImage3034({
-                        img,
-                        area: {
-                            topRight: {
-                                lat: data.area.top_right.lat,
-                                lng: data.area.top_right.lon,
-                            },
-                            bottomLeft: {
-                                lat: data.area.bottom_left.lat,
-                                lng: data.area.bottom_left.lon,
-                            }
-                        }
-                    });
-                };
-            } catch (err) {
-                console.error('Failed to load image:', err);
-            }
-        };
-
-        fetchImage();
+        fetchMapImage("depth_heatmap_3034")
+            .then(ctx.setDepthImage3034)
+            .catch(err => console.error("Failed to load image 3034:", err));
     }, []);
 
     useEffect(() => {
-        const fetchImage = async () => {
-            try {
-                const imageName = "depth_heatmap_3857";
-                const response = await fetch(`http://localhost:4000/image/${imageName}`);
-                if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+        fetchMapImage("depth_heatmap_3857")
+            .then(ctx.setDepthImage3857)
+            .catch(err => console.error("Failed to load image 3857:", err));
+    }, []);
+    useEffect(() => {
+        fetchMapImage("traffic_heatmap_3034")
+            .then(ctx.setTrafficImage3034)
+            .catch(err => console.error("Failed to load image 3034:", err));
+    }, []);
 
-                const data = await response.json();
-
-                const img = new Image();
-                img.src = `data:${data.mimeType};base64,${data.data}`;
-                img.onload = () => {
-                    ctx.setDepthImage3857({
-                        img,
-                        area: {
-                            topRight: {
-                                lat: data.area.top_right.lat,
-                                lng: data.area.top_right.lon,
-                            },
-                            bottomLeft: {
-                                lat: data.area.bottom_left.lat,
-                                lng: data.area.bottom_left.lon,
-                            }
-                        }
-                    });
-                };
-            } catch (err) {
-                console.error('Failed to load image:', err);
-            }
-        };
-
-        fetchImage();
+    useEffect(() => {
+        fetchMapImage("traffic_heatmap_3857")
+            .then(ctx.setTrafficImage3857)
+            .catch(err => console.error("Failed to load image 3857:", err));
     }, []);
 
     useEffect(() => {
@@ -86,7 +72,7 @@ function DataLoader({ children }: { children: JSX.Element }) {
                 const parsed = parseTrajectory(trajectory);
                 const zoomed = prepareTrajectories(parsed);
                 ctx.setTrajectories(zoomed);
-                ctx.setNumTrajectoriesVisible(zoomed[1].length);
+                ctx.setNumTrajectoriesVisible(Math.min(zoomed[1].length, 1000));
             } catch (err) {
                 console.error('Failed to fetch trajectory:', err);
             }

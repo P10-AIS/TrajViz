@@ -9,9 +9,10 @@ export interface drawInfo {
 
 interface CanvasLayerProps {
   drawMethod: (info: drawInfo) => void;
+  zIndex?: number;
 }
 
-function CanvasLayer({ drawMethod }: CanvasLayerProps) {
+function CanvasLayer({ drawMethod, zIndex = 0 }: CanvasLayerProps) {
   const map = useMap();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -20,7 +21,7 @@ function CanvasLayer({ drawMethod }: CanvasLayerProps) {
     canvas.style.position = "absolute";
     canvas.style.top = "0";
     canvas.style.left = "0";
-    canvas.style.zIndex = "1000";
+    canvas.style.zIndex = `${1000 + zIndex}`;
     canvas.style.pointerEvents = "none";
 
     const mapContainer = map.getContainer();

@@ -133,8 +133,8 @@ function isBoundingBoxInView(bbox: Bound, view: Bound): boolean {
 }
 
 
-export const drawDepthImage = (
-  depthImage: GeoImage | null,
+export const drawGeoImage = (
+  geoImage: GeoImage | null,
   opacity: number,
   info: DrawInfo
 ) => {
@@ -143,9 +143,9 @@ export const drawDepthImage = (
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (!depthImage) return;
+  if (!geoImage) return;
 
-  const { img, area } = depthImage;
+  const { img, area } = geoImage;
 
 
   const topRight = map.latLngToContainerPoint([
