@@ -1,8 +1,8 @@
-import type { Map } from "leaflet";
-import type { drawInfo as DrawInfo } from "../components/CanvasLayer";
+import type { DrawInfo } from "../components/CanvasLayer";
 import type { Bound } from "../types/Bound";
 import type { GeoImage } from "../types/GeoImage";
 import type { Polygon } from "../types/Polygon";
+import type { PredictionStep } from "../types/Prediction";
 import type { Trajectory } from "../types/Trajectory";
 import type { ZoomLevels } from "../types/ZoomLevels";
 
@@ -55,6 +55,95 @@ export const drawTrajectories = (
 
     ctx.beginPath();
     ctx.arc(pts[pts.length - 1].x, pts[pts.length - 1].y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
+    ctx.fill();
+  });
+}
+
+export function drawPredictions(
+  predictionStep: ZoomLevels<PredictionStep>,
+  fullFidelity: boolean,
+  info: DrawInfo
+) {
+  const { map, canvas } = info;
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const bounds = map.getBounds();
+  const viewBox: Bound = {
+    minLat: bounds.getSouth(),
+    minLng: bounds.getWest(),
+    maxLat: bounds.getNorth(),
+    maxLng: bounds.getEast(),
+  };
+
+  const zoom = map.getZoom();
+
+  const trajZoom = fullFidelity ? 18 : zoom;
+
+  const trajectories = predictionStep[trajZoom].predictions;
+
+  trajectories.forEach((t) => {
+    if (t.predictedPoints.length === 0) return;
+
+    if (!isBoundingBoxInView(t.boundingBoxPredicted, viewBox)) return;
+    if (!isBoundingBoxInView(t.boundingBoxTrue, viewBox)) return;
+
+    // Draw predicted points in solid line
+    const predPts = t.predictedPoints.map((p) => {
+      const pt = map.latLngToContainerPoint([p.lat, p.lng]);
+      return { x: pt.x, y: pt.y };
+    });
+    ctx.beginPath();
+    ctx.moveTo(predPts[0].x, predPts[0].y);
+    for (let i = 1; i < predPts.length; i++) {
+      ctx.lineTo(predPts[i].x, predPts[i].y);
+    }
+    ctx.strokeStyle = "rgba(255,0,0,0.8)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+
+    // Draw true points in dashed line
+    const truePts = t.truePoints.map((p) => {
+      const pt = map.latLngToContainerPoint([p.lat, p.lng]);
+      return { x: pt.x, y: pt.y };
+    });
+
+    ctx.beginPath();
+    ctx.moveTo(truePts[0].x, truePts[0].y);
+    for (let i = 1; i < truePts.length; i++) {
+      ctx.lineTo(truePts[i].x, truePts[i].y);
+    }
+    ctx.strokeStyle = "rgba(0,100,255,0.8)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw line between corresponding true & predicted points
+    ctx.strokeStyle = "rgba(0,0,0,0.4)";
+    ctx.lineWidth = 0.7;
+    ctx.setLineDash([4, 4]); // dashed
+
+    for (let i = 0; i < Math.min(truePts.length, predPts.length); i++) {
+      ctx.beginPath();
+      ctx.moveTo(truePts[i].x, truePts[i].y);
+      ctx.lineTo(predPts[i].x, predPts[i].y);
+      ctx.stroke();
+    }
+
+    ctx.setLineDash([]); // reset
+
+
+    // Draw start and end points
+    const radius = 2;
+
+    ctx.beginPath();
+    ctx.arc(truePts[0].x, truePts[0].y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "green";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(truePts[truePts.length - 1].x, truePts[truePts.length - 1].y, radius, 0, 2 * Math.PI);
     ctx.fillStyle = "red";
     ctx.fill();
   });

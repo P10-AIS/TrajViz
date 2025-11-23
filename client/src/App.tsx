@@ -1,6 +1,6 @@
 
 import Map3034 from './components/Map3034';
-import { drawGeoImage, drawPolygons, drawTrajectories } from './utils/draw';
+import { drawGeoImage, drawPolygons, drawPredictions, drawTrajectories } from './utils/draw';
 import CanvasLayer from './components/CanvasLayer';
 import SettingsPanel from './components/SettingsPanel';
 import { useAppContext } from './contexts/AppContext';
@@ -24,6 +24,7 @@ function App() {
               {ctx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(ctx.trafficImage3034, ctx.trafficImageOpacity, info)} />}
               {ctx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, ctx.fullEezFidelity, info)} />}
               {ctx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
+              {ctx.showPredictionSteps && <CanvasLayer zIndex={5} drawMethod={(info) => drawPredictions(ctx.predictionSteps[ctx.currentPredictionStep], ctx.fullPredictionFidelity, info)} />}
             </>
           </ Map3034>) : (
           <Map3857>
@@ -33,6 +34,7 @@ function App() {
               {ctx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(ctx.trafficImage3857, ctx.trafficImageOpacity, info)} />}
               {ctx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, ctx.fullEezFidelity, info)} />}
               {ctx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, info)} />}
+              {ctx.showPredictionSteps && <CanvasLayer zIndex={5} drawMethod={(info) => drawPredictions(ctx.predictionSteps[ctx.currentPredictionStep], ctx.fullPredictionFidelity, info)} />}
             </>
           </ Map3857>
         )}

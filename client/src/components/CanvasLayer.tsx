@@ -2,13 +2,13 @@ import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 
-export interface drawInfo {
+export interface DrawInfo {
   map: L.Map;
   canvas: HTMLCanvasElement;
 }
 
 interface CanvasLayerProps {
-  drawMethod: (info: drawInfo) => void;
+  drawMethod: (info: DrawInfo) => void;
   zIndex?: number;
 }
 

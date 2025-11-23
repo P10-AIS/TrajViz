@@ -3,6 +3,7 @@ import type { Polygon } from '../types/Polygon';
 import type { ZoomLevels } from '../types/ZoomLevels';
 import type { Trajectory } from '../types/Trajectory';
 import type { GeoImage } from '../types/GeoImage';
+import type { PredictionStep } from '../types/Prediction';
 
 interface AppContextType {
     trajectories: ZoomLevels<Trajectory[]>;
@@ -39,6 +40,14 @@ interface AppContextType {
     setTrafficImageOpacity: (opacity: number) => void;
     showESPG3034: boolean;
     setShowESPG3034: (show: boolean) => void;
+    showPredictionSteps: boolean;
+    setShowPredictionSteps: (show: boolean) => void;
+    predictionSteps: ZoomLevels<PredictionStep>[];
+    setPredictionSteps: (steps: ZoomLevels<PredictionStep>[]) => void;
+    currentPredictionStep: number;
+    setCurrentPredictionStep: (step: number) => void;
+    fullPredictionFidelity: boolean;
+    setFullPredictionFidelity: (fidelity: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -61,6 +70,10 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [depthImageOpacity, setDepthImageOpacity] = useState(1);
     const [trafficImageOpacity, setTrafficImageOpacity] = useState(1);
     const [showESPG3034, setShowESPG3034] = useState(true);
+    const [showPredictionSteps, setShowPredictionSteps] = useState(false);
+    const [predictionSteps, setPredictionSteps] = useState<ZoomLevels<PredictionStep>[]>([]);
+    const [currentPredictionStep, setCurrentPredictionStep] = useState(0);
+    const [fullPredictionFidelity, setFullPredictionFidelity] = useState(false);
 
     const value: AppContextType = {
         trajectories,
@@ -97,6 +110,14 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setTrafficImageOpacity,
         showESPG3034,
         setShowESPG3034,
+        showPredictionSteps,
+        setShowPredictionSteps,
+        predictionSteps,
+        setPredictionSteps,
+        currentPredictionStep,
+        setCurrentPredictionStep,
+        fullPredictionFidelity,
+        setFullPredictionFidelity,
     };
 
     return (

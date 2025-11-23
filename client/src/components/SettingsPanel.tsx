@@ -106,6 +106,41 @@ function SettingsPanel() {
                             />
                         </div>
 
+                        {/* show prediction toggle */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Show Predictions</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.showPredictionSteps}
+                                onChange={(e) => ctx.setShowPredictionSteps(e.target.checked)}
+                            />
+                        </div>
+
+                        {/* full prediction fidelity toggle */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Full Prediction Fidelity</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.fullPredictionFidelity}
+                                onChange={(e) => ctx.setFullPredictionFidelity(e.target.checked)}
+                            />
+                        </div>
+
+                        {/* current prediction step slider */}
+                        <div className="flex flex-col">
+                            <div className="flex flex-row justify-between">
+                                <div>Current Prediction Step: </div>
+                                <div>{ctx.currentPredictionStep + 1} / {ctx.predictionSteps.length}</div>
+                            </div>
+                            <input
+                                type="range"
+                                min={0}
+                                max={ctx.predictionSteps.length - 1}
+                                value={ctx.currentPredictionStep}
+                                onChange={(e) => ctx.setCurrentPredictionStep(parseInt(e.target.value))}
+                            />
+                        </div>
+
                         {/* show depth image toggle */}
                         <div className="flex flex-row items-center justify-between">
                             <div>Show Depth Image</div>

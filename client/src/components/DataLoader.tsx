@@ -1,7 +1,7 @@
 import { useEffect, type JSX } from "react";
 import { useAppContext } from "../contexts/AppContext";
-import { parseTrajectory } from "../utils/parse";
-import { prepareEezPolygons, prepareTrajectories } from "../utils/prepare";
+import { parsePredictionSteps, parseTrajectory } from "../utils/parse";
+import { prepareEezPolygons, preparePredictions, prepareTrajectories } from "../utils/prepare";
 import eezData from '../assets/eez.json';
 import type { GeoImage } from "../types/GeoImage";
 
@@ -83,6 +83,22 @@ function DataLoader({ children }: { children: JSX.Element }) {
 
     useEffect(() => {
         ctx.setPolygons(prepareEezPolygons(eezData.features[0].geometry.coordinates));
+    }, []);
+
+    useEffect(() => {
+        const fetchLatestPredictions = async () => {
+            try {
+                const response = await fetch('http://localhost:4000/predictions');
+                const data = await response.json();
+                const parsed = parsePredictionSteps(data);
+                const zoomed = preparePredictions(parsed);
+                ctx.setPredictionSteps(zoomed);
+                ctx.setCurrentPredictionStep(parsed.length - 1);
+            } catch (err) {
+                console.error('Failed to fetch trajectory:', err);
+            }
+        };
+        fetchLatestPredictions()
     }, []);
 
     return children;
