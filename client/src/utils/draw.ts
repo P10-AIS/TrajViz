@@ -46,6 +46,14 @@ export const drawTrajectories = (
     ctx.lineWidth = 1;
     ctx.stroke();
 
+    ctx.fillStyle = "rgba(0,100,255,0.8)";
+    for (let i = 0; i < pts.length; i++) {
+      ctx.beginPath();
+      ctx.arc(pts[i].x, pts[i].y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+
     const radius = 2;
 
     ctx.beginPath();
@@ -110,14 +118,24 @@ export function drawPredictions(
       return { x: pt.x, y: pt.y };
     });
 
-    ctx.beginPath();
-    ctx.moveTo(truePts[0].x, truePts[0].y);
-    for (let i = 1; i < truePts.length; i++) {
-      ctx.lineTo(truePts[i].x, truePts[i].y);
+    // ctx.beginPath();
+    // ctx.moveTo(truePts[0].x, truePts[0].y);
+    // for (let i = 1; i < truePts.length; i++) {
+    //   ctx.lineTo(truePts[i].x, truePts[i].y);
+    // }
+    // ctx.strokeStyle = "rgba(0,100,255,0.8)";
+    // ctx.lineWidth = 1;
+    // ctx.stroke();
+
+    ctx.fillStyle = "rgba(0,100,255,0.8)"; // Use fillStyle for solid points
+
+    for (let i = 0; i < truePts.length; i++) {
+      ctx.beginPath();
+      // arc(x, y, radius, startAngle, endAngle)
+      ctx.arc(truePts[i].x, truePts[i].y, 2, 0, Math.PI * 2);
+      ctx.fill();
     }
-    ctx.strokeStyle = "rgba(0,100,255,0.8)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+
 
     // Draw line between corresponding true & predicted points
     ctx.strokeStyle = "rgba(0,0,0,0.4)";
