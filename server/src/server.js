@@ -63,37 +63,36 @@ app.get('/trajectories', async (req, res) => {
 
 // Prediction endpoints ----------------------------------------------------------
 
-app.post('/predictions', express.raw({ type: '*/*', limit: '200mb' }), async (req, res) => {
+app.post('/predictions/:model', express.raw({ type: '*/*', limit: '200mb' }), async (req, res) => {
   try {
+    const { model } = req.params
+
+    if (!model) {
+      return res.status(400).json({ error: 'Missing model name' })
+    }
+
     const compressedBuffer = req.body
     const base64 = compressedBuffer.toString('base64')
 
-    // We must decompress to read "step"
-    const decompressed = zlib.gunzipSync(compressedBuffer)
-    const json = JSON.parse(decompressed.toString())
+    const key = `${PREDICTION_KEY}:${model}`
+    await redis.set(key, base64)
 
-    const step = json.step
-    if (step === undefined) {
-      return res.status(400).json({ error: "Missing step in uploaded data" })
-    }
-
-    // Store the compressed base64 under prediction_data:{step}
-    await redis.set(`${PREDICTION_KEY}:${step}`, base64)
-
-    res.json({ status: "stored", step })
+    res.json({ status: 'stored predictions', model })
   } catch (err) {
-    console.error("Error storing prediction:", err)
-    res.status(500).json({ error: "Failed to store prediction" })
+    console.error('Error storing prediction:', err)
+    res.status(500).json({ error: 'Failed to store prediction' })
   }
-})
+}
+)
 
-
-app.get('/predictions', async (req, res) => {
+app.get('/predictions/:model', async (req, res) => {
   try {
-    const keys = await redis.keys(`${PREDICTION_KEY}:*`)
+    const { model } = req.params
+
+    const keys = await redis.keys(`${PREDICTION_KEY}:${model}:*`)
     keys.sort((a, b) => {
-      const sa = parseInt(a.split(":")[1])
-      const sb = parseInt(b.split(":")[1])
+      const sa = parseInt(a.split(':').pop())
+      const sb = parseInt(b.split(':').pop())
       return sa - sb
     })
 
@@ -110,44 +109,27 @@ app.get('/predictions', async (req, res) => {
 
     res.json(results)
   } catch (err) {
-    console.error("Error reading predictions:", err)
-    res.status(500).json({ error: "Failed to read predictions" })
+    console.error('Error reading predictions:', err)
+    res.status(500).json({ error: 'Failed to read predictions' })
   }
 })
 
-
-app.get('/predictions/:step', async (req, res) => {
+app.post('/predictions/:model/reset', async (req, res) => {
   try {
-    const step = req.params.step
-    const base64 = await redis.get(`${PREDICTION_KEY}:${step}`)
+    const { model } = req.params
 
-    if (!base64) {
-      return res.status(404).json({ error: "Step not found" })
-    }
-
-    const buf = Buffer.from(base64, 'base64')
-    const decoded = zlib.gunzipSync(buf)
-
-    res.json(JSON.parse(decoded.toString()))
-  } catch (err) {
-    console.error("Error retrieving step:", err)
-    res.status(500).json({ error: "Failed to retrieve prediction step" })
-  }
-})
-
-
-app.post('/predictions/reset', async (req, res) => {
-  try {
-    const keys = await redis.keys(`${PREDICTION_KEY}:*`)
+    const keys = await redis.keys(`${PREDICTION_KEY}:${model}:*`)
     if (keys.length > 0) {
       await redis.del(...keys)
     }
-    res.json({ status: "all_predictions_removed" })
+
+    res.json({ status: 'model_predictions_removed', model })
   } catch (err) {
-    console.error("Error resetting predictions:", err)
-    res.status(500).json({ error: "Failed to reset predictions" })
+    console.error('Error resetting predictions:', err)
+    res.status(500).json({ error: 'Failed to reset predictions' })
   }
 })
+
 
 // Image endpoints ----------------------------------------------------------
 
