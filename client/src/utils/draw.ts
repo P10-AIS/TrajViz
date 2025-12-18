@@ -17,7 +17,7 @@ export const DrawConfig = {
     start: "green",
     end: "red",
   },
-  dotsZoom: 13,    // Zoom level to start drawing points
+  dotsZoom: 10,    // Zoom level to start drawing points
   radiusScale: 3,        // Base radius for points
   lineWidthScale: 2,     // Base line width for lines
   dashPattern: [4, 4],   // For dashed lines

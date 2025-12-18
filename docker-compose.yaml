@@ -1,0 +1,36 @@
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: ./Dockerfile
+    ports:
+      - '8000:80'
+    restart: unless-stopped
+    env_file:
+      - ./client/.env
+    depends_on:
+      - server
+    networks:
+      - TrajNet
+
+  server:
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    networks:
+      - TrajNet
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis-data:/data
+    networks:
+      - TrajNet
+
+networks:
+  TrajNet:
+    driver: bridge
+
+volumes:
+  redis-data:

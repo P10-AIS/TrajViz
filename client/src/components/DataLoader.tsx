@@ -8,7 +8,7 @@ import shipPng from "../assets/boat.png";
 
 
 async function fetchMapImage(imageName: string): Promise<GeoImage> {
-    const response = await fetch(`http://localhost:4000/image/${imageName}`);
+    const response = await fetch(`/api/image/${imageName}`);
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
 
     const data = await response.json();
@@ -67,7 +67,7 @@ function DataLoader({ children }: { children: JSX.Element }) {
     useEffect(() => {
         const fetchLatestTrajectory = async () => {
             try {
-                const response = await fetch('http://localhost:4000/trajectories');
+                const response = await fetch('/api/trajectories');
                 const data = await response.json();
                 const { trajectory } = data;
                 const parsed = parseTrajectory(trajectory);
@@ -89,12 +89,12 @@ function DataLoader({ children }: { children: JSX.Element }) {
     useEffect(() => {
         const fetchModelsAndPredictions = async () => {
             try {
-                const modelRes = await fetch('http://localhost:4000/predictions');
+                const modelRes = await fetch('/api/predictions');
                 const { models } = await modelRes.json();
 
                 for (const model of models) {
                     const response = await fetch(
-                        `http://localhost:4000/predictions/${model}`
+                        `/api/predictions/${model}`
                     );
                     const data = await response.json();
 
