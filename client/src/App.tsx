@@ -18,6 +18,7 @@ function App() {
   const MapComponent = appCtx.showESPG3034 ? Map3034 : Map3857;
   const TileLayerComponent = appCtx.showESPG3034 ? TileLayer3034 : TileLayer3857;
   const depthImage = appCtx.showESPG3034 ? appCtx.depthImage3034 : appCtx.depthImage3857;
+  const bwDepthImage = appCtx.showESPG3034 ? appCtx.bwDepthImage3034 : appCtx.bwDepthImage3857;
   const trafficImage = appCtx.showESPG3034 ? appCtx.trafficImage3034 : appCtx.trafficImage3857;
 
   function handlePredictionsInView(modelName: string, idsInView: Set<number>) {
@@ -52,6 +53,7 @@ function App() {
           <>
             {appCtx.showMapTiles && <TileLayerComponent />}
             {appCtx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(depthImage, appCtx.depthImageOpacity, info)} />}
+            {appCtx.showBWDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(bwDepthImage, appCtx.bwDepthImageOpacity, info)} />}
             {appCtx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(trafficImage, appCtx.trafficImageOpacity, info)} />}
             {appCtx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(appCtx.polygons, appCtx.fullEezFidelity, info)} />}
             {appCtx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(appCtx.trajectories, appCtx.numTrajectoriesVisible, appCtx.fullTrajectoryFidelity, appCtx.showTrajectoryDots, info)} />}

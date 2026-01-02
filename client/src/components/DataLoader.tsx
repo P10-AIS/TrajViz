@@ -53,6 +53,16 @@ function DataLoader({ children }: { children: JSX.Element }) {
             .catch(err => console.error("Failed to load image 3857:", err));
     }, []);
     useEffect(() => {
+        fetchMapImage("bw_depth_heatmap_3034")
+            .then(ctx.setBWDepthImage3034)
+            .catch(err => console.error("Failed to load image 3034:", err));
+    }, []);
+    useEffect(() => {
+        fetchMapImage("bw_depth_heatmap_3857")
+            .then(ctx.setBWDepthImage3857)
+            .catch(err => console.error("Failed to load image 3857:", err));
+    }, []);
+    useEffect(() => {
         fetchMapImage("traffic_heatmap_3034")
             .then(ctx.setTrafficImage3034)
             .catch(err => console.error("Failed to load image 3034:", err));

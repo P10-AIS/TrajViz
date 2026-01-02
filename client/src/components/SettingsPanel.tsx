@@ -240,6 +240,32 @@ function SettingsPanel() {
                             />
                         </div>
 
+                        {/* show bw depth image toggle */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Show B&W Depth Image</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.showBWDepthImage}
+                                onChange={(e) => ctx.setShowBWDepthImage(e.target.checked)}
+                            />
+                        </div>
+
+                        {/* bw depth image opacity slider */}
+                        <div className="flex flex-col">
+                            <div className="flex flex-row justify-between">
+                                <div>B&W Depth Image Opacity: </div>
+                                <div>{ctx.bwDepthImageOpacity}</div>
+                            </div>
+                            <input
+                                type="range"
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={ctx.bwDepthImageOpacity}
+                                onChange={(e) => ctx.setBWDepthImageOpacity(parseFloat(e.target.value))}
+                            />
+                        </div>
+
                         {/* show traffic image toggle */}
                         <div className="flex flex-row items-center justify-between">
                             <div>Show Traffic Image</div>

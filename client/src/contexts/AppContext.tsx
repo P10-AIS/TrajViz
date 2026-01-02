@@ -22,6 +22,10 @@ interface AppContextType {
     setFullEezFidelity: (fidelity: boolean) => void;
     depthImage3034: GeoImage | null;
     setDepthImage3034: (image: GeoImage | null) => void;
+    bwDepthImage3034: GeoImage | null;
+    setBWDepthImage3034: (image: GeoImage | null) => void;
+    bwDepthImage3857: GeoImage | null;
+    setBWDepthImage3857: (image: GeoImage | null) => void;
     depthImage3857: GeoImage | null;
     setDepthImage3857: (image: GeoImage | null) => void;
     trafficImage3034: GeoImage | null;
@@ -32,10 +36,14 @@ interface AppContextType {
     setShowMapTiles: (show: boolean) => void;
     showDepthImage: boolean;
     setShowDepthImage: (show: boolean) => void;
+    showBWDepthImage: boolean;
+    setShowBWDepthImage: (show: boolean) => void;
     showTrafficImage: boolean;
     setShowTrafficImage: (show: boolean) => void;
     depthImageOpacity: number;
     setDepthImageOpacity: (opacity: number) => void;
+    bwDepthImageOpacity: number;
+    setBWDepthImageOpacity: (opacity: number) => void;
     trafficImageOpacity: number;
     setTrafficImageOpacity: (opacity: number) => void;
     showESPG3034: boolean;
@@ -67,8 +75,10 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [fullEezFidelity, setFullEezFidelity] = useLocalStorageState('fullEezFidelity', false);
     const [showMapTiles, setShowMapTiles] = useLocalStorageState('showMapTiles', true);
     const [showDepthImage, setShowDepthImage] = useLocalStorageState('showDepthImage', false);
+    const [showBWDepthImage, setShowBWDepthImage] = useLocalStorageState('showBWDepthImage', false);
     const [showTrafficImage, setShowTrafficImage] = useLocalStorageState('showTrafficImage', false);
     const [depthImageOpacity, setDepthImageOpacity] = useLocalStorageState('depthImageOpacity', 1);
+    const [bwDepthImageOpacity, setBWDepthImageOpacity] = useLocalStorageState('bwDepthImageOpacity', 1);
     const [trafficImageOpacity, setTrafficImageOpacity] = useLocalStorageState('trafficImageOpacity', 1);
     const [showESPG3034, setShowESPG3034] = useLocalStorageState('showESPG3034', true);
     const [fullPredictionFidelity, setFullPredictionFidelity] = useLocalStorageState('fullPredictionFidelity', false);
@@ -83,6 +93,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [polygons, setPolygons] = useState<Polygon[]>([]);
     const [depthImage3034, setDepthImage3034] = useState<GeoImage | null>(null);
     const [depthImage3857, setDepthImage3857] = useState<GeoImage | null>(null);
+    const [bwDepthImage3034, setBWDepthImage3034] = useState<GeoImage | null>(null);
+    const [bwDepthImage3857, setBWDepthImage3857] = useState<GeoImage | null>(null);
     const [trafficImage3034, setTrafficImage3034] = useState<GeoImage | null>(null);
     const [trafficImage3857, setTrafficImage3857] = useState<GeoImage | null>(null);
     const [modelPredictions, setModelPredictions] = useState<Record<string, Prediction[]>>({});
@@ -107,6 +119,10 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setDepthImage3034: setDepthImage3034,
         depthImage3857: depthImage3857,
         setDepthImage3857: setDepthImage3857,
+        bwDepthImage3034: bwDepthImage3034,
+        setBWDepthImage3034: setBWDepthImage3034,
+        bwDepthImage3857: bwDepthImage3857,
+        setBWDepthImage3857: setBWDepthImage3857,
         trafficImage3034: trafficImage3034,
         setTrafficImage3034: setTrafficImage3034,
         trafficImage3857: trafficImage3857,
@@ -117,6 +133,10 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowDepthImage,
         depthImageOpacity,
         setDepthImageOpacity,
+        bwDepthImageOpacity,
+        setBWDepthImageOpacity,
+        showBWDepthImage,
+        setShowBWDepthImage,
         showTrafficImage,
         setShowTrafficImage,
         trafficImageOpacity,
