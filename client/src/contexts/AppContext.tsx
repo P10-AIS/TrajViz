@@ -4,6 +4,7 @@ import type { Trajectory } from '../types/Trajectory';
 import type { GeoImage } from '../types/GeoImage';
 import type { Prediction } from '../types/Prediction';
 import { useLocalStorageState } from './LocalStorageState';
+import type { DrawConfig } from '../types/DrawConfig';
 
 interface AppContextType {
     trajectories: Trajectory[];
@@ -64,6 +65,8 @@ interface AppContextType {
     setShowPredictionDots: (show: boolean) => void;
     showPredictionCorrectionLines: boolean;
     setShowPredictionCorrectionLines: (show: boolean) => void;
+    drawConfig: DrawConfig;
+    setDrawConfig: (config: DrawConfig) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -99,6 +102,22 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [trafficImage3857, setTrafficImage3857] = useState<GeoImage | null>(null);
     const [modelPredictions, setModelPredictions] = useState<Record<string, Prediction[]>>({});
     const [shipSizeGuideImage, setShipSizeGuideImage] = useState<HTMLImageElement | null>(null);
+    const [drawConfig, setDrawConfig] = useState<DrawConfig>({
+        colors: {
+            true: "rgba(0,100,255)",
+            masked: "rgba(255,0,0)",
+            truePoints: "rgba(0,100,255)",
+            truePredictedLine: "black",
+            polygonStroke: "orange",
+            start: "green",
+            end: "red",
+        },
+        dotsZoom: 10,
+        radiusScale: 3,
+        lineWidthScale: 2,
+        dashPattern: [4, 4],
+    });
+
 
     const value: AppContextType = {
         trajectories,
@@ -159,6 +178,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowPredictionDots,
         showPredictionCorrectionLines,
         setShowPredictionCorrectionLines,
+        drawConfig,
+        setDrawConfig,
     };
 
     return (

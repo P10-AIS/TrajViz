@@ -1,26 +1,10 @@
 import type { DrawInfo } from "../components/CanvasLayer";
 import type { Bound } from "../types/Bound";
+import type { DrawConfig } from "../types/DrawConfig";
 import type { GeoImage } from "../types/GeoImage";
 import type { Polygon } from "../types/Polygon";
 import type { Prediction } from "../types/Prediction";
 import type { Trajectory } from "../types/Trajectory";
-
-// ------------------- Global Config -------------------
-export const DrawConfig = {
-  colors: {
-    true: "rgba(0,100,255)",
-    masked: "rgba(255,0,0)",
-    truePoints: "rgba(0,100,255)",
-    truePredictedLine: "black",
-    polygonStroke: "orange",
-    start: "green",
-    end: "red",
-  },
-  dotsZoom: 10,    // Zoom level to start drawing points
-  radiusScale: 3,        // Base radius for points
-  lineWidthScale: 2,     // Base line width for lines
-  dashPattern: [4, 4],   // For dashed lines
-};
 
 // ------------------- Utility Functions -------------------
 function isBoundingBoxInView(bbox: Bound, view: Bound): boolean {
@@ -52,7 +36,8 @@ export const drawTrajectories = (
   maxTrajectories: number,
   fullTrajectoryFidelity: boolean,
   showDots: boolean,
-  info: DrawInfo
+  info: DrawInfo,
+  config: DrawConfig,
 ) => {
   const { map, canvas } = info;
   const ctx = canvas.getContext("2d")!;
@@ -84,30 +69,30 @@ export const drawTrajectories = (
     for (let i = 1; i < pts.length; i++) {
       ctx.lineTo(pts[i].x, pts[i].y);
     }
-    ctx.strokeStyle = DrawConfig.colors.true;
-    ctx.lineWidth = DrawConfig.lineWidthScale;
+    ctx.strokeStyle = config.colors.true;
+    ctx.lineWidth = config.lineWidthScale;
     ctx.stroke();
 
     // Draw trajectory points
-    if (zoom >= DrawConfig.dotsZoom && showDots) {
-      ctx.fillStyle = DrawConfig.colors.true;
+    if (zoom >= config.dotsZoom && showDots) {
+      ctx.fillStyle = config.colors.true;
       for (let i = 0; i < pts.length; i++) {
         ctx.beginPath();
-        ctx.arc(pts[i].x, pts[i].y, DrawConfig.radiusScale, 0, Math.PI * 2);
+        ctx.arc(pts[i].x, pts[i].y, config.radiusScale, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
     // Draw start and end points
-    const radius = DrawConfig.radiusScale;
+    const radius = config.radiusScale;
     ctx.beginPath();
     ctx.arc(pts[0].x, pts[0].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = DrawConfig.colors.start;
+    ctx.fillStyle = config.colors.start;
     ctx.fill();
 
     ctx.beginPath();
     ctx.arc(pts[pts.length - 1].x, pts[pts.length - 1].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = DrawConfig.colors.end;
+    ctx.fillStyle = config.colors.end;
     ctx.fill();
   });
 };
@@ -118,7 +103,8 @@ export function drawPredictions(
   showDots: boolean,
   showCorrectionLines: boolean,
   idsInViewCallback: (idsInView: Set<number>) => void,
-  info: DrawInfo
+  info: DrawInfo,
+  config: DrawConfig
 ) {
   if (!predictions) return;
 
@@ -159,9 +145,9 @@ export function drawPredictions(
 
     // ---------------- Dashed Lines Between True & Predicted ----------------
     if (showCorrectionLines) {
-      ctx.strokeStyle = DrawConfig.colors.truePredictedLine;
-      ctx.lineWidth = DrawConfig.lineWidthScale * 0.7;
-      ctx.setLineDash(DrawConfig.dashPattern);
+      ctx.strokeStyle = config.colors.truePredictedLine;
+      ctx.lineWidth = config.lineWidthScale * 0.7;
+      ctx.setLineDash(config.dashPattern);
 
       for (let i = 0; i < Math.min(truePts.length, predPts.length); i++) {
         if (p.level[trajZoom].masks[i]) continue;
@@ -177,10 +163,10 @@ export function drawPredictions(
     // ---- draw predicted lines ----
     for (let i = 1; i < predPts.length; i++) {
       const strokeStyle = !p.level[trajZoom].masks[i] || !p.level[trajZoom].masks[i - 1]
-        ? DrawConfig.colors.masked
-        : DrawConfig.colors.true;
+        ? config.colors.masked
+        : config.colors.true;
       ctx.strokeStyle = strokeStyle;
-      ctx.lineWidth = DrawConfig.lineWidthScale;
+      ctx.lineWidth = config.lineWidthScale;
 
       ctx.beginPath();
       ctx.moveTo(predPts[i - 1].x, predPts[i - 1].y);
@@ -189,19 +175,19 @@ export function drawPredictions(
     }
 
     // Draw masked points
-    if (zoom >= DrawConfig.dotsZoom && showDots) {
-      ctx.fillStyle = DrawConfig.colors.masked;
+    if (zoom >= config.dotsZoom && showDots) {
+      ctx.fillStyle = config.colors.masked;
       for (let i = 0; i < predPts.length; i++) {
         if (p.level[trajZoom].masks[i]) continue;
         ctx.beginPath();
-        ctx.arc(predPts[i].x, predPts[i].y, DrawConfig.radiusScale, 0, Math.PI * 2);
+        ctx.arc(predPts[i].x, predPts[i].y, config.radiusScale, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
     // ---- draw true lines ----
-    ctx.strokeStyle = DrawConfig.colors.truePoints;
-    ctx.lineWidth = DrawConfig.lineWidthScale;
+    ctx.strokeStyle = config.colors.truePoints;
+    ctx.lineWidth = config.lineWidthScale;
     ctx.beginPath();
     ctx.moveTo(truePts[0].x, truePts[0].y);
     for (let i = 1; i < truePts.length; i++) {
@@ -210,14 +196,14 @@ export function drawPredictions(
     ctx.stroke();
 
     // ---- draw true points ----
-    if (zoom >= DrawConfig.dotsZoom && showDots) {
-      ctx.fillStyle = DrawConfig.colors.truePoints;
+    if (zoom >= config.dotsZoom && showDots) {
+      ctx.fillStyle = config.colors.truePoints;
       for (let i = 0; i < truePts.length; i++) {
         ctx.beginPath();
         ctx.arc(
           truePts[i].x,
           truePts[i].y,
-          DrawConfig.radiusScale,
+          config.radiusScale,
           0,
           Math.PI * 2
         );
@@ -226,15 +212,15 @@ export function drawPredictions(
     }
 
     // ---------------- Start/End Points ----------------
-    const radius = DrawConfig.radiusScale;
+    const radius = config.radiusScale;
     ctx.beginPath();
     ctx.arc(truePts[0].x, truePts[0].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = DrawConfig.colors.start;
+    ctx.fillStyle = config.colors.start;
     ctx.fill();
 
     ctx.beginPath();
     ctx.arc(truePts[truePts.length - 1].x, truePts[truePts.length - 1].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = DrawConfig.colors.end;
+    ctx.fillStyle = config.colors.end;
     ctx.fill();
   });
 
@@ -244,7 +230,8 @@ export function drawPredictions(
 export function drawPolygons(
   polygons: Polygon[],
   fullFidelity: boolean,
-  info: DrawInfo
+  info: DrawInfo,
+  config: DrawConfig,
 ) {
   const { map, canvas } = info;
   const ctx = canvas.getContext("2d")!;
@@ -275,8 +262,8 @@ export function drawPolygons(
       }
 
       ctx.closePath();
-      ctx.strokeStyle = DrawConfig.colors.polygonStroke;
-      ctx.lineWidth = DrawConfig.lineWidthScale;
+      ctx.strokeStyle = config.colors.polygonStroke;
+      ctx.lineWidth = config.lineWidthScale;
       ctx.stroke();
     }
 
@@ -295,8 +282,8 @@ export function drawPolygons(
         }
 
         ctx.closePath();
-        ctx.strokeStyle = DrawConfig.colors.polygonStroke;
-        ctx.lineWidth = DrawConfig.lineWidthScale;
+        ctx.strokeStyle = config.colors.polygonStroke;
+        ctx.lineWidth = config.lineWidthScale;
         ctx.stroke();
       });
     }

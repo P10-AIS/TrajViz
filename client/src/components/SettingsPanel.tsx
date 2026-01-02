@@ -91,6 +91,38 @@ function SettingsPanel() {
                             />
                         </div>
 
+                        {/* draw config dot radius slider */}
+                        <div className="flex flex-col">
+                            <div className="flex flex-row justify-between">
+                                <div>Dot Radius: </div>
+                                <div>{ctx.drawConfig.radiusScale}</div>
+                            </div>
+                            <input
+                                type="range"
+                                min={1}
+                                max={10}
+                                step={1}
+                                value={ctx.drawConfig.radiusScale}
+                                onChange={(e) => ctx.setDrawConfig({ ...ctx.drawConfig, radiusScale: Number(e.target.value) })}
+                            />
+                        </div>
+
+                        {/* draw config line width slider */}
+                        <div className="flex flex-col">
+                            <div className="flex flex-row justify-between">
+                                <div>Line Width: </div>
+                                <div>{ctx.drawConfig.lineWidthScale}</div>
+                            </div>
+                            <input
+                                type="range"
+                                min={1}
+                                max={10}
+                                step={1}
+                                value={ctx.drawConfig.lineWidthScale}
+                                onChange={(e) => ctx.setDrawConfig({ ...ctx.drawConfig, lineWidthScale: Number(e.target.value) })}
+                            />
+                        </div>
+
                         <hr className="border-slate-300"></hr>
 
                         {/* eez toggle */}

@@ -55,12 +55,12 @@ function App() {
             {appCtx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(depthImage, appCtx.depthImageOpacity, info)} />}
             {appCtx.showBWDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(bwDepthImage, appCtx.bwDepthImageOpacity, info)} />}
             {appCtx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(trafficImage, appCtx.trafficImageOpacity, info)} />}
-            {appCtx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(appCtx.polygons, appCtx.fullEezFidelity, info)} />}
-            {appCtx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(appCtx.trajectories, appCtx.numTrajectoriesVisible, appCtx.fullTrajectoryFidelity, appCtx.showTrajectoryDots, info)} />}
+            {appCtx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(appCtx.polygons, appCtx.fullEezFidelity, info, appCtx.drawConfig)} />}
+            {appCtx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(appCtx.trajectories, appCtx.numTrajectoriesVisible, appCtx.fullTrajectoryFidelity, appCtx.showTrajectoryDots, info, appCtx.drawConfig)} />}
 
             {Object.entries(appCtx.modelPredictions).map(([modelName, predictions]) => (
               appCtx.showModelPredictions[modelName] &&
-              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) => drawPredictions(predictions, appCtx.fullPredictionFidelity, appCtx.showPredictionDots, appCtx.showPredictionCorrectionLines, (idsInView) => handlePredictionsInView(modelName, idsInView), info)} />
+              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) => drawPredictions(predictions, appCtx.fullPredictionFidelity, appCtx.showPredictionDots, appCtx.showPredictionCorrectionLines, (idsInView) => handlePredictionsInView(modelName, idsInView), info, appCtx.drawConfig)} />
             ))}
 
             {appCtx.enableShipSizeGuide && <CanvasLayer zIndex={6} drawMethod={(info) => drawShipCursor(info, appCtx.shipSizeGuideImage)} />}
