@@ -4,7 +4,6 @@ import type { GeoImage } from "../types/GeoImage";
 import type { Polygon } from "../types/Polygon";
 import type { Prediction } from "../types/Prediction";
 import type { Trajectory } from "../types/Trajectory";
-import type { ZoomLevels } from "../types/ZoomLevels";
 
 // ------------------- Global Config -------------------
 export const DrawConfig = {
@@ -49,7 +48,7 @@ function metersToPixels(map: L.Map, meters: number): number {
 
 // ------------------- Drawing Functions -------------------
 export const drawTrajectories = (
-  trajectories: ZoomLevels<Trajectory[]>,
+  trajectories: Trajectory[],
   maxTrajectories: number,
   fullTrajectoryFidelity: boolean,
   showDots: boolean,
@@ -68,13 +67,13 @@ export const drawTrajectories = (
   };
 
   const zoom = map.getZoom();
-  const trajZoom = fullTrajectoryFidelity ? 18 : zoom;
+  const trajZoom = fullTrajectoryFidelity ? 17 : zoom;
 
-  trajectories[trajZoom]?.slice(0, maxTrajectories).forEach((t) => {
-    if (t.messages.length === 0) return;
-    if (!isBoundingBoxInView(t.boundingBox, viewBox)) return;
+  trajectories.slice(0, maxTrajectories).forEach((t) => {
+    if (t.level[trajZoom].messages.length === 0) return;
+    if (!isBoundingBoxInView(t.level[trajZoom].boundingBox, viewBox)) return;
 
-    const pts = t.messages.map((p) => {
+    const pts = t.level[trajZoom].messages.map((p) => {
       const pt = map.latLngToContainerPoint([p.point.lat, p.point.lng]);
       return { x: pt.x, y: pt.y };
     });
@@ -114,13 +113,14 @@ export const drawTrajectories = (
 };
 
 export function drawPredictions(
-  predictionsByZoom: ZoomLevels<Prediction[]> | undefined,
+  predictions: Prediction[],
   fullFidelity: boolean,
   showDots: boolean,
   showCorrectionLines: boolean,
+  idsInViewCallback: (idsInView: Set<number>) => void,
   info: DrawInfo
 ) {
-  if (!predictionsByZoom) return;
+  if (!predictions) return;
 
   const { map, canvas } = info;
   const ctx = canvas.getContext("2d")!;
@@ -135,20 +135,24 @@ export function drawPredictions(
   };
 
   const zoom = map.getZoom();
-  const trajZoom = fullFidelity ? 18 : zoom;
-  const trajectories = predictionsByZoom[trajZoom];
+  const trajZoom = fullFidelity ? 17 : zoom;
+  const idsInView = new Set<number>();
 
-  trajectories.forEach((t) => {
-    if (t.predictedPoints.length === 0) return;
-    if (!isBoundingBoxInView(t.boundingBoxPredicted, viewBox)) return;
-    if (!isBoundingBoxInView(t.boundingBoxTrue, viewBox)) return;
+  predictions.forEach((p) => {
+    if (p.level[trajZoom].predictedPoints.length === 0) return;
+    if (!isBoundingBoxInView(p.level[trajZoom].boundingBoxPredicted, viewBox)) return;
+    if (!isBoundingBoxInView(p.level[trajZoom].boundingBoxTrue, viewBox)) return;
 
-    const predPts = t.predictedPoints.map((p) => {
+    idsInView.add(p.trajectoryId);
+
+    if (!p.enabled) return;
+
+    const predPts = p.level[trajZoom].predictedPoints.map((p) => {
       const pt = map.latLngToContainerPoint([p.lat, p.lng]);
       return { x: pt.x, y: pt.y };
     });
 
-    const truePts = t.truePoints.map((p) => {
+    const truePts = p.level[trajZoom].truePoints.map((p) => {
       const pt = map.latLngToContainerPoint([p.lat, p.lng]);
       return { x: pt.x, y: pt.y };
     });
@@ -160,7 +164,7 @@ export function drawPredictions(
       ctx.setLineDash(DrawConfig.dashPattern);
 
       for (let i = 0; i < Math.min(truePts.length, predPts.length); i++) {
-        if (t.masks[i]) continue;
+        if (p.level[trajZoom].masks[i]) continue;
         ctx.beginPath();
         ctx.moveTo(truePts[i].x, truePts[i].y);
         ctx.lineTo(predPts[i].x, predPts[i].y);
@@ -172,7 +176,7 @@ export function drawPredictions(
 
     // ---- draw predicted lines ----
     for (let i = 1; i < predPts.length; i++) {
-      const strokeStyle = !t.masks[i] || !t.masks[i - 1]
+      const strokeStyle = !p.level[trajZoom].masks[i] || !p.level[trajZoom].masks[i - 1]
         ? DrawConfig.colors.masked
         : DrawConfig.colors.true;
       ctx.strokeStyle = strokeStyle;
@@ -188,7 +192,7 @@ export function drawPredictions(
     if (zoom >= DrawConfig.dotsZoom && showDots) {
       ctx.fillStyle = DrawConfig.colors.masked;
       for (let i = 0; i < predPts.length; i++) {
-        if (t.masks[i]) continue;
+        if (p.level[trajZoom].masks[i]) continue;
         ctx.beginPath();
         ctx.arc(predPts[i].x, predPts[i].y, DrawConfig.radiusScale, 0, Math.PI * 2);
         ctx.fill();
@@ -233,10 +237,12 @@ export function drawPredictions(
     ctx.fillStyle = DrawConfig.colors.end;
     ctx.fill();
   });
+
+  idsInViewCallback(idsInView);
 }
 
 export function drawPolygons(
-  polygons: ZoomLevels<Polygon[]>,
+  polygons: Polygon[],
   fullFidelity: boolean,
   info: DrawInfo
 ) {
@@ -253,18 +259,18 @@ export function drawPolygons(
   };
 
   const zoom = map.getZoom();
-  const trajZoom = fullFidelity ? 18 : zoom;
+  const trajZoom = fullFidelity ? 17 : zoom;
 
-  polygons[trajZoom]?.forEach((polygon) => {
-    if (!isBoundingBoxInView(polygon.outline.boundingBox, viewBox)) return;
+  polygons.forEach((polygon) => {
+    if (!isBoundingBoxInView(polygon.level[trajZoom].outline.boundingBox, viewBox)) return;
 
-    if (polygon.outline.points.length > 0) {
+    if (polygon.level[trajZoom].outline.points.length > 0) {
       ctx.beginPath();
-      const start = map.latLngToContainerPoint([polygon.outline.points[0].lat, polygon.outline.points[0].lng]);
+      const start = map.latLngToContainerPoint([polygon.level[trajZoom].outline.points[0].lat, polygon.level[trajZoom].outline.points[0].lng]);
       ctx.moveTo(start.x, start.y);
 
-      for (let i = 1; i < polygon.outline.points.length; i++) {
-        const pt = map.latLngToContainerPoint([polygon.outline.points[i].lat, polygon.outline.points[i].lng]);
+      for (let i = 1; i < polygon.level[trajZoom].outline.points.length; i++) {
+        const pt = map.latLngToContainerPoint([polygon.level[trajZoom].outline.points[i].lat, polygon.level[trajZoom].outline.points[i].lng]);
         ctx.lineTo(pt.x, pt.y);
       }
 
@@ -274,8 +280,8 @@ export function drawPolygons(
       ctx.stroke();
     }
 
-    if (polygon.holes) {
-      polygon.holes.forEach((hole) => {
+    if (polygon.level[trajZoom].holes) {
+      polygon.level[trajZoom].holes.forEach((hole) => {
         if (!isBoundingBoxInView(hole.boundingBox, viewBox)) return;
         if (hole.points.length === 0) return;
 

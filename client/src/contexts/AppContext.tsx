@@ -1,16 +1,15 @@
 import { createContext, useContext, useState, type JSX } from 'react';
 import type { Polygon } from '../types/Polygon';
-import type { ZoomLevels } from '../types/ZoomLevels';
 import type { Trajectory } from '../types/Trajectory';
 import type { GeoImage } from '../types/GeoImage';
 import type { Prediction } from '../types/Prediction';
 import { useLocalStorageState } from './LocalStorageState';
 
 interface AppContextType {
-    trajectories: ZoomLevels<Trajectory[]>;
-    setTrajectories: (trajectories: ZoomLevels<Trajectory[]>) => void;
-    polygons: ZoomLevels<Polygon[]>;
-    setPolygons: (polygons: ZoomLevels<Polygon[]>) => void;
+    trajectories: Trajectory[];
+    setTrajectories: (trajectories: Trajectory[]) => void;
+    polygons: Polygon[];
+    setPolygons: (polygons: Polygon[]) => void;
     eezOutlineVisible: boolean;
     setEezOutlineVisible: (visible: boolean) => void;
     trajectoriesVisible: boolean;
@@ -43,8 +42,8 @@ interface AppContextType {
     setShowESPG3034: (show: boolean) => void;
     showModelPredictions: Record<string, boolean>;
     setShowModelPredictions: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-    modelPredictions: Record<string, ZoomLevels<Prediction[]>>;
-    setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, ZoomLevels<Prediction[]>>>>;
+    modelPredictions: Record<string, Prediction[]>;
+    setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, Prediction[]>>>;
     fullPredictionFidelity: boolean;
     setFullPredictionFidelity: (fidelity: boolean) => void;
     enableShipSizeGuide: boolean;
@@ -79,14 +78,14 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [showPredictionDots, setShowPredictionDots] = useLocalStorageState('showPredictionDots', true);
     const [showPredictionCorrectionLines, setShowPredictionCorrectionLines] = useLocalStorageState('showPredictionCorrectionLines', true);
 
-    const [trajectories, setTrajectories] = useState<ZoomLevels<Trajectory[]>>([]);
+    const [trajectories, setTrajectories] = useState<Trajectory[]>([]);
     const [numTrajectoriesVisible, setNumTrajectoriesVisible] = useState(0);
-    const [polygons, setPolygons] = useState<ZoomLevels<Polygon[]>>([]);
+    const [polygons, setPolygons] = useState<Polygon[]>([]);
     const [depthImage3034, setDepthImage3034] = useState<GeoImage | null>(null);
     const [depthImage3857, setDepthImage3857] = useState<GeoImage | null>(null);
     const [trafficImage3034, setTrafficImage3034] = useState<GeoImage | null>(null);
     const [trafficImage3857, setTrafficImage3857] = useState<GeoImage | null>(null);
-    const [modelPredictions, setModelPredictions] = useState<Record<string, ZoomLevels<Prediction[]>>>({});
+    const [modelPredictions, setModelPredictions] = useState<Record<string, Prediction[]>>({});
     const [shipSizeGuideImage, setShipSizeGuideImage] = useState<HTMLImageElement | null>(null);
 
     const value: AppContextType = {

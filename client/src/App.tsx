@@ -8,33 +8,60 @@ import DataLoader from './components/DataLoader';
 import TileLayer3034 from './components/TileLayer3034';
 import Map3857 from './components/Map3857';
 import TileLayer3857 from './components/TileLayer3857';
+import InViewPanel from './components/InViewPanel';
+import { useInViewContext } from './contexts/InViewContext';
 
 function App() {
-  const ctx = useAppContext();
+  const appCtx = useAppContext();
+  const inViewCtx = useInViewContext();
 
-  const MapComponent = ctx.showESPG3034 ? Map3034 : Map3857;
-  const TileLayerComponent = ctx.showESPG3034 ? TileLayer3034 : TileLayer3857;
-  const depthImage = ctx.showESPG3034 ? ctx.depthImage3034 : ctx.depthImage3857;
-  const trafficImage = ctx.showESPG3034 ? ctx.trafficImage3034 : ctx.trafficImage3857;
+  const MapComponent = appCtx.showESPG3034 ? Map3034 : Map3857;
+  const TileLayerComponent = appCtx.showESPG3034 ? TileLayer3034 : TileLayer3857;
+  const depthImage = appCtx.showESPG3034 ? appCtx.depthImage3034 : appCtx.depthImage3857;
+  const trafficImage = appCtx.showESPG3034 ? appCtx.trafficImage3034 : appCtx.trafficImage3857;
+
+  function handlePredictionsInView(modelName: string, idsInView: Set<number>) {
+    inViewCtx.setModelPredictionsInView(prev => {
+      const prevSet = prev[modelName];
+
+      if (prevSet && setsEqual(prevSet, idsInView)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [modelName]: idsInView,
+      };
+    });
+  }
+
+  function setsEqual(a: Set<number>, b: Set<number>) {
+    if (a.size !== b.size) return false;
+    for (const v of a) {
+      if (!b.has(v)) return false;
+    }
+    return true;
+  }
 
   return (
     <div style={{ width: '100%', height: '100vh' }}>
       <SettingsPanel />
+      <InViewPanel />
       <DataLoader >
         <MapComponent>
           <>
-            {ctx.showMapTiles && <TileLayerComponent />}
-            {ctx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(depthImage, ctx.depthImageOpacity, info)} />}
-            {ctx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(trafficImage, ctx.trafficImageOpacity, info)} />}
-            {ctx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(ctx.polygons, ctx.fullEezFidelity, info)} />}
-            {ctx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(ctx.trajectories, ctx.numTrajectoriesVisible, ctx.fullTrajectoryFidelity, ctx.showTrajectoryDots, info)} />}
+            {appCtx.showMapTiles && <TileLayerComponent />}
+            {appCtx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(depthImage, appCtx.depthImageOpacity, info)} />}
+            {appCtx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(trafficImage, appCtx.trafficImageOpacity, info)} />}
+            {appCtx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(appCtx.polygons, appCtx.fullEezFidelity, info)} />}
+            {appCtx.trajectoriesVisible && <CanvasLayer zIndex={4} drawMethod={(info) => drawTrajectories(appCtx.trajectories, appCtx.numTrajectoriesVisible, appCtx.fullTrajectoryFidelity, appCtx.showTrajectoryDots, info)} />}
 
-            {Object.entries(ctx.modelPredictions).map(([modelName, predictions]) => (
-              ctx.showModelPredictions[modelName] &&
-              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) => drawPredictions(predictions, ctx.fullPredictionFidelity, ctx.showPredictionDots, ctx.showPredictionCorrectionLines, info)} />
+            {Object.entries(appCtx.modelPredictions).map(([modelName, predictions]) => (
+              appCtx.showModelPredictions[modelName] &&
+              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) => drawPredictions(predictions, appCtx.fullPredictionFidelity, appCtx.showPredictionDots, appCtx.showPredictionCorrectionLines, (idsInView) => handlePredictionsInView(modelName, idsInView), info)} />
             ))}
 
-            {ctx.enableShipSizeGuide && <CanvasLayer zIndex={6} drawMethod={(info) => drawShipCursor(info, ctx.shipSizeGuideImage)} />}
+            {appCtx.enableShipSizeGuide && <CanvasLayer zIndex={6} drawMethod={(info) => drawShipCursor(info, appCtx.shipSizeGuideImage)} />}
           </>
         </ MapComponent>
       </DataLoader>

@@ -1,6 +1,6 @@
 import { useEffect, type JSX } from "react";
 import { useAppContext } from "../contexts/AppContext";
-import { parsePredictions, parseTrajectory } from "../utils/parse";
+import { parseMultiPolygon, parsePredictions, parseTrajectories } from "../utils/parse";
 import { prepareEezPolygons, preparePredictions, prepareTrajectories } from "../utils/prepare";
 import eezData from '../assets/eez.json';
 import type { GeoImage } from "../types/GeoImage";
@@ -70,10 +70,10 @@ function DataLoader({ children }: { children: JSX.Element }) {
                 const response = await fetch('/api/trajectories');
                 const data = await response.json();
                 const { trajectory } = data;
-                const parsed = parseTrajectory(trajectory);
+                const parsed = parseTrajectories(trajectory);
                 const zoomed = prepareTrajectories(parsed);
                 ctx.setTrajectories(zoomed);
-                ctx.setNumTrajectoriesVisible(Math.min(zoomed[1].length, 1000));
+                ctx.setNumTrajectoriesVisible(Math.min(zoomed.length, 1000));
             } catch (err) {
                 console.error('Failed to fetch trajectory:', err);
             }
@@ -83,7 +83,9 @@ function DataLoader({ children }: { children: JSX.Element }) {
     }, []);
 
     useEffect(() => {
-        ctx.setPolygons(prepareEezPolygons(eezData.features[0].geometry.coordinates));
+        const parsed = parseMultiPolygon(eezData.features[0].geometry.coordinates);
+        const zoomed = prepareEezPolygons(parsed);
+        ctx.setPolygons(zoomed);
     }, []);
 
     useEffect(() => {

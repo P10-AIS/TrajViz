@@ -25,7 +25,7 @@ function SettingsPanel() {
 
         try {
             const res = await fetch(
-                `http://localhost:4000/predictions/${modelName}/reset`,
+                `/api/predictions/${modelName}/reset`,
                 { method: "POST" }
             );
 
@@ -37,7 +37,7 @@ function SettingsPanel() {
         }
     }
     return (
-        <div className="absolute m-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm">
+        <div className="absolute top-5 left-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm">
             {hidden && (
                 <div className="flex ">
                     <button className="hover:rotate-90 hover:scale-110 transition-transform hover:cursor-pointer" onClick={() => setHidden(false)}>
@@ -154,7 +154,7 @@ function SettingsPanel() {
                             <input
                                 type="range"
                                 min={0}
-                                max={ctx.trajectories[1] ? ctx.trajectories[1].length : 0}
+                                max={ctx.trajectories.length}
                                 value={ctx.numTrajectoriesVisible}
                                 onChange={(e) => ctx.setNumTrajectoriesVisible(parseInt(e.target.value))}
                             />
