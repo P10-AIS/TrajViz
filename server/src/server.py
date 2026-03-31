@@ -1,29 +1,60 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-import os
+from .state_loader import load_predictions, load_labels
 
-model_data_cache = {}
+predictions_cache = {}
+labels_cache = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Loading predictions into memory...")
     
-    if os.path.exists("Predictions"):
-        for filename in os.listdir("Predictions"):
-            with open(os.path.join("Predictions", filename), "r") as f:
-                model_data_cache[filename] = f.read()
+    # Load directly into the dictionaries
+    load_predictions(predictions_cache)
+    load_labels(labels_cache)
+
+    print(f"Loaded predictions from {len(predictions_cache)} models into memory.")
+    print(f"Loaded labels from {len(labels_cache)} files into memory.")
     
-    print(f"Loaded {len(model_data_cache)} files into memory.")
+    yield
     
-    yield  # The server is now running and accepting requests
-    
-    # --- SHUTDOWN LOGIC ---
-    # This runs once when the server stops
     print("Clearing memory...")
-    model_data_cache.clear()
+    predictions_cache.clear()
+    labels_cache.clear()
 
 app = FastAPI(lifespan=lifespan)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World", "modelData": model_data_cache}
+@app.get("/predictions")
+async def get_predictions():
+    return {"predictions": predictions_cache}
+
+@app.get("/labels")
+async def get_labels():
+    return {"labels": labels_cache}
+
+@app.post("/update_predictions")
+def update_predictions():
+    global predictions_cache
+    new_cache = {}
+    load_predictions(new_cache)
+    
+    predictions_cache = new_cache 
+    
+    return {
+        "message": "Predictions updated successfully.",
+        "predictions": predictions_cache
+    }
+
+@app.post("/update_labels")
+def update_labels():
+    global labels_cache
+    
+    new_cache = {}
+    load_labels(new_cache)
+    
+    labels_cache = new_cache 
+    
+    return {
+        "message": "Labels updated successfully.",
+        "labels": labels_cache
+    }
