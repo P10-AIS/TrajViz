@@ -1,2 +1,8 @@
 node_modules
 */.env
+Data
+Outputs
+Results
+Predictions
+*.pyc
+*.pyc
