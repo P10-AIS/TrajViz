@@ -119,6 +119,7 @@ export function drawPredictions(
   predictions: Trajectory[],
   density: number,
   fullFidelity: boolean,
+  showDots: boolean,
   idsInViewCallback: (idsInView: Set<number>) => void,
   info: DrawInfo,
   config: DrawConfig
@@ -157,6 +158,20 @@ export function drawPredictions(
       const containerPt = map.latLngToContainerPoint([pt.lat, pt.lng]);
       return { x: containerPt.x, y: containerPt.y };
     });
+
+    if (zoom >= config.dotsZoom && showDots) {
+      ctx.fillStyle = config.colors.masked;
+      
+      for (let i = 0; i < predPts.length; i++) {
+        const pt = predPts[i];
+        if (p.level[trajZoom].padding[i] || pt === null) {
+          continue;
+        }
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, config.radiusScale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
     // ---- draw predicted lines ----
     for (let i = 1; i < predPts.length; i++) {

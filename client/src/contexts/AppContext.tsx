@@ -111,7 +111,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
             start: "green",
             end: "red",
         },
-        dotsZoom: 10,
+        dotsZoom: 8,
         radiusScale: 3,
         lineWidthScale: 2,
         dashPattern: [4, 4],
