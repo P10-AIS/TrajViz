@@ -54,6 +54,7 @@ function SettingsPanel() {
             console.error(err);
         } finally {
             setUpdatingPredictions(false);
+            window.location.reload();
         }
     }
 
@@ -68,6 +69,7 @@ function SettingsPanel() {
             console.error(err);
         } finally {
             setUpdatingLabels(false);
+            window.location.reload();
         }
     }
 
