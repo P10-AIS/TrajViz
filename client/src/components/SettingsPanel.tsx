@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAppContext } from "../contexts/AppContext";
-import { IoMdCog, IoMdClose, IoMdTrash } from "react-icons/io";
+import { IoMdCog, IoMdClose } from "react-icons/io";
 import { useInViewContext } from "../contexts/InViewContext";
 
 function SettingsPanel() {
@@ -9,38 +9,6 @@ function SettingsPanel() {
     const [hidden, setHidden] = useState(true);
     const [updatingPredictions, setUpdatingPredictions] = useState(false);
     const [updatingLabels, setUpdatingLabels] = useState(false);
-
-    async function handleDeletePrediction(modelName: string) {
-        if (!window.confirm(`Are you sure you want to delete prediction for ${modelName}?`)) {
-            return;
-        }
-
-        ctx.setModelPredictions(prev => {
-            const copy = { ...prev };
-            delete copy[modelName];
-            return copy;
-        });
-
-        ctx.setShowModelPredictions(prev => {
-            const copy = { ...prev };
-            delete copy[modelName];
-            return copy;
-        });
-
-        try {
-            const res = await fetch(
-                `/api/predictions/${modelName}/reset`,
-                { method: "POST" }
-            );
-
-            if (!res.ok) {
-                throw new Error(`Failed to delete prediction for ${modelName}`);
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
 
     function handleTogglePrediction(checked: boolean, modelName: string) {
         ctx.setShowModelPredictions({
@@ -55,6 +23,12 @@ function SettingsPanel() {
             }
             return prev;
         });
+    }
+    function handleToggleLabel(checked: boolean, labelName: string) {
+        ctx.setShowLabels({
+            ...ctx.showLabels,
+            [labelName]: checked
+        })
     }
 
     async function handleUpdateBackendPredictions() {
@@ -197,26 +171,6 @@ function SettingsPanel() {
 
                         <hr className="border-slate-300"></hr>
 
-                        {/* trajectory toggle */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Show Trajectories</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.trajectoriesVisible}
-                                onChange={(e) => ctx.setTrajectoriesVisible(e.target.checked)}
-                            />
-                        </div>
-
-                        {/* Toggle trajectory dots */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Show Trajectory Dots</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.showTrajectoryDots}
-                                onChange={(e) => ctx.setShowTrajectoryDots(e.target.checked)}
-                            />
-                        </div>
-
                         {/* full trajectory fidelity toggle */}
                         <div className="flex flex-row items-center justify-between">
                             <div>Full Trajectory Fidelity</div>
@@ -226,20 +180,34 @@ function SettingsPanel() {
                                 onChange={(e) => ctx.setFullTrajectoryFidelity(e.target.checked)}
                             />
                         </div>
-
-                        {/* num trajectories slider */}
                         <div className="flex flex-col">
                             <div className="flex flex-row justify-between">
-                                <div>Number of Trajectories: </div>
-                                <div>{ctx.numTrajectoriesVisible}</div>
+                                <div>Trajcetory Density </div>
+                                <div>{ctx.trajectoryDensity}</div>
                             </div>
                             <input
                                 type="range"
                                 min={0}
-                                max={1000}
-                                value={ctx.numTrajectoriesVisible}
-                                onChange={(e) => ctx.setNumTrajectoriesVisible(parseInt(e.target.value))}
+                                max={1}
+                                step={0.01}
+                                value={ctx.trajectoryDensity}
+                                onChange={(e) => ctx.setTrajectoryDensity(parseFloat(e.target.value))}
                             />
+                        </div>
+
+                        <div>Toggle Labels:</div>
+                        <div className="p-2 bg-gray-200 rounded">
+                            {Object.keys(ctx.labels).map((labelName) => (
+                                <div key={labelName} className="flex flex-row items-center space-x-3">
+                                    <div className="truncate">{labelName}</div>
+                                    <input
+                                        type="checkbox"
+                                        className="ml-auto"
+                                        checked={ctx.showLabels[labelName] || false}
+                                        onChange={(e) => handleToggleLabel(e.target.checked, labelName)}
+                                    />
+                                </div>
+                            ))}
                         </div>
 
                         <hr className="border-slate-300"></hr>
@@ -289,7 +257,6 @@ function SettingsPanel() {
                         <div className="p-2 bg-gray-200 rounded">
                             {Object.keys(ctx.modelPredictions).map((modelName) => (
                                 <div key={modelName} className="flex flex-row items-center space-x-3">
-                                    <button onClick={() => handleDeletePrediction(modelName)} className="hover:cursor-pointer hover:text-red-600"><IoMdTrash size={16} /></button>
                                     <div className="truncate">{modelName}</div>
                                     <input
                                         type="checkbox"

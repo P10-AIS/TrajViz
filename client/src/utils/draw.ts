@@ -32,7 +32,7 @@ function metersToPixels(map: L.Map, meters: number): number {
 // ------------------- Drawing Functions -------------------
 export const drawTrajectories = (
   trajectories: Trajectory[],
-  maxTrajectories: number,
+  density: number,
   fullTrajectoryFidelity: boolean,
   showDots: boolean,
   info: DrawInfo,
@@ -53,7 +53,7 @@ export const drawTrajectories = (
   const zoom = map.getZoom();
   const trajZoom = fullTrajectoryFidelity ? 17 : zoom;
 
-  trajectories.slice(0, maxTrajectories).forEach((t) => {
+  trajectories.slice(0, Math.ceil(trajectories.length * density)).forEach((t) => {
     if (t.level[trajZoom].points.length === 0) return;
     if (!isBoundingBoxInView(t.level[trajZoom].boundingBox, viewBox)) return;
 
@@ -117,6 +117,7 @@ export const drawTrajectories = (
 
 export function drawPredictions(
   predictions: Trajectory[],
+  density: number,
   fullFidelity: boolean,
   idsInViewCallback: (idsInView: Set<number>) => void,
   info: DrawInfo,
@@ -140,7 +141,7 @@ export function drawPredictions(
   const trajZoom = fullFidelity ? 17 : zoom;
   const idsInView = new Set<number>();
 
-  predictions.forEach((p) => {
+  predictions.slice(0, Math.ceil(predictions.length * density)).forEach((p) => {
     if (p.level[trajZoom].points.length === 0) return;
     if (!isBoundingBoxInView(p.level[trajZoom].boundingBox, viewBox)) return;
 

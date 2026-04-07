@@ -12,8 +12,6 @@ interface AppContextType {
     setEezOutlineVisible: (visible: boolean) => void;
     trajectoriesVisible: boolean;
     setTrajectoriesVisible: (visible: boolean) => void;
-    numTrajectoriesVisible: number;
-    setNumTrajectoriesVisible: (num: number) => void;
     fullTrajectoryFidelity: boolean;
     setFullTrajectoryFidelity: (fidelity: boolean) => void;
     fullEezFidelity: boolean;
@@ -50,8 +48,12 @@ interface AppContextType {
     setShowModelPredictions: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
     modelPredictions: Record<string, Trajectory[]>;
     setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, Trajectory[]>>>;
+    showLabels: Record<string, boolean>;
+    setShowLabels: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
     labels: Record<string, Trajectory[]>;
     setLabels: React.Dispatch<React.SetStateAction<Record<string, Trajectory[]>>>;
+    trajectoryDensity: number;
+    setTrajectoryDensity: (density: number) => void;
     fullPredictionFidelity: boolean;
     setFullPredictionFidelity: (fidelity: boolean) => void;
     enableShipSizeGuide: boolean;
@@ -87,13 +89,14 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [showESPG3034, setShowESPG3034] = useLocalStorageState('showESPG3034', true);
     const [fullPredictionFidelity, setFullPredictionFidelity] = useLocalStorageState('fullPredictionFidelity', false);
     const [showModelPredictions, setShowModelPredictions] = useLocalStorageState<Record<string, boolean>>('showModelPredictions', {});
+    const [showLabels, setShowLabels] = useLocalStorageState<Record<string, boolean>>('showLabels', {});
     const [enableShipSizeGuide, setEnableShipSizeGuide] = useLocalStorageState('enableShipSizeGuide', false);
     const [showTrajectoryDots, setShowTrajectoryDots] = useLocalStorageState('showTrajectoryDots', true);
     const [showPredictionDots, setShowPredictionDots] = useLocalStorageState('showPredictionDots', true);
     const [showPredictionCorrectionLines, setShowPredictionCorrectionLines] = useLocalStorageState('showPredictionCorrectionLines', true);
     const [showGroundTruth, setShowGroundTruth] = useLocalStorageState('showGroundTruth', true);
+    const [trajectoryDensity, setTrajectoryDensity] = useLocalStorageState('trajectoryDensity', 0.1);
 
-    const [numTrajectoriesVisible, setNumTrajectoriesVisible] = useState(0);
     const [polygons, setPolygons] = useState<Polygon[]>([]);
     const [depthImage3034, setDepthImage3034] = useState<GeoImage | null>(null);
     const [depthImage3857, setDepthImage3857] = useState<GeoImage | null>(null);
@@ -128,8 +131,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setEezOutlineVisible: setEezOutlineVisible,
         trajectoriesVisible,
         setTrajectoriesVisible,
-        numTrajectoriesVisible,
-        setNumTrajectoriesVisible,
         fullTrajectoryFidelity,
         setFullTrajectoryFidelity,
         fullEezFidelity,
@@ -166,8 +167,12 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowModelPredictions,
         modelPredictions,
         setModelPredictions,
+        showLabels,
+        setShowLabels,
         labels,
         setLabels,
+        trajectoryDensity,
+        setTrajectoryDensity,
         fullPredictionFidelity,
         setFullPredictionFidelity,
         enableShipSizeGuide,

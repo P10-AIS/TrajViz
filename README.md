@@ -7,5 +7,4 @@ cd client
 npm run dev
 
 ### server
-cd server
-fastapi dev src/server --port 4000
+fastapi dev server/src/server.py --port 4000
