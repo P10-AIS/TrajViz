@@ -3,8 +3,7 @@ import type { Bound } from "../types/Bound";
 import type { DrawConfig } from "../types/DrawConfig";
 import type { GeoImage } from "../types/GeoImage";
 import type { Polygon } from "../types/Polygon";
-import type { Prediction } from "../types/Prediction";
-import type { Trajectory } from "../types/Trajectory";
+import type { Trajectory } from "../types/Prediction";
 
 // ------------------- Utility Functions -------------------
 function isBoundingBoxInView(bbox: Bound, view: Bound): boolean {
@@ -55,54 +54,70 @@ export const drawTrajectories = (
   const trajZoom = fullTrajectoryFidelity ? 17 : zoom;
 
   trajectories.slice(0, maxTrajectories).forEach((t) => {
-    if (t.level[trajZoom].messages.length === 0) return;
+    if (t.level[trajZoom].points.length === 0) return;
     if (!isBoundingBoxInView(t.level[trajZoom].boundingBox, viewBox)) return;
 
-    const pts = t.level[trajZoom].messages.map((p) => {
-      const pt = map.latLngToContainerPoint([p.point.lat, p.point.lng]);
+    const pts = t.level[trajZoom].points.map((p) => {
+      if (p.lat === null || p.lng === null || p.lat === undefined) {
+        return null;
+      }
+      const pt = map.latLngToContainerPoint([p.lat, p.lng]);
       return { x: pt.x, y: pt.y };
     });
 
-    // Draw trajectory line
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) {
-      ctx.lineTo(pts[i].x, pts[i].y);
-    }
+    // --- Draw trajectory lines (Segmented to handle nulls) ---
     ctx.strokeStyle = config.colors.true;
     ctx.lineWidth = config.lineWidthScale;
-    ctx.stroke();
+    
+    for (let i = 1; i < pts.length; i++) {
+      const start = pts[i - 1];
+      const end = pts[i];
+      // Only draw the segment if both points are valid
+      if (start && end) {
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+    }
 
-    // Draw trajectory points
+    // --- Draw trajectory points (Dots) ---
     if (zoom >= config.dotsZoom && showDots) {
       ctx.fillStyle = config.colors.true;
-      for (let i = 0; i < pts.length; i++) {
+      for (const pt of pts) {
+        if (!pt) continue;
         ctx.beginPath();
-        ctx.arc(pts[i].x, pts[i].y, config.radiusScale, 0, Math.PI * 2);
+        ctx.arc(pt.x, pt.y, config.radiusScale, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
-    // Draw start and end points
+    // --- Draw start and end points ---
     const radius = config.radiusScale;
-    ctx.beginPath();
-    ctx.arc(pts[0].x, pts[0].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = config.colors.start;
-    ctx.fill();
+    
+    // Find first non-null point
+    const firstPt = pts.find(p => p !== null);
+    if (firstPt) {
+      ctx.beginPath();
+      ctx.arc(firstPt.x, firstPt.y, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = config.colors.start;
+      ctx.fill();
+    }
 
-    ctx.beginPath();
-    ctx.arc(pts[pts.length - 1].x, pts[pts.length - 1].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = config.colors.end;
-    ctx.fill();
+    // Find last non-null point
+    const lastPt = [...pts].reverse().find(p => p !== null);
+    if (lastPt) {
+      ctx.beginPath();
+      ctx.arc(lastPt.x, lastPt.y, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = config.colors.end;
+      ctx.fill();
+    }
   });
 };
 
 export function drawPredictions(
-  predictions: Prediction[],
+  predictions: Trajectory[],
   fullFidelity: boolean,
-  showDots: boolean,
-  showCorrectionLines: boolean,
-  showGroundTruth: boolean,
   idsInViewCallback: (idsInView: Set<number>) => void,
   info: DrawInfo,
   config: DrawConfig
@@ -126,106 +141,38 @@ export function drawPredictions(
   const idsInView = new Set<number>();
 
   predictions.forEach((p) => {
-    if (p.level[trajZoom].predictedPoints.length === 0) return;
-    if (!isBoundingBoxInView(p.level[trajZoom].boundingBoxPredicted, viewBox)) return;
-    if (!isBoundingBoxInView(p.level[trajZoom].boundingBoxTrue, viewBox)) return;
+    if (p.level[trajZoom].points.length === 0) return;
+    if (!isBoundingBoxInView(p.level[trajZoom].boundingBox, viewBox)) return;
 
     idsInView.add(p.trajectoryId);
 
     if (!p.enabled) return;
 
-    const predPts = p.level[trajZoom].predictedPoints.map((p) => {
-      const pt = map.latLngToContainerPoint([p.lat, p.lng]);
-      return { x: pt.x, y: pt.y };
-    });
-
-    const truePts = p.level[trajZoom].truePoints.map((p) => {
-      const pt = map.latLngToContainerPoint([p.lat, p.lng]);
-      return { x: pt.x, y: pt.y };
-    });
-
-    // ---------------- Dashed Lines Between True & Predicted ----------------
-    if (showCorrectionLines) {
-      ctx.strokeStyle = config.colors.truePredictedLine;
-      ctx.lineWidth = config.lineWidthScale * 0.7;
-      ctx.setLineDash(config.dashPattern);
-
-      for (let i = 0; i < Math.min(truePts.length, predPts.length); i++) {
-        if (p.level[trajZoom].masks[i]) continue;
-        ctx.beginPath();
-        ctx.moveTo(truePts[i].x, truePts[i].y);
-        ctx.lineTo(predPts[i].x, predPts[i].y);
-        ctx.stroke();
+    const predPts = p.level[trajZoom].points.map((pt) => {
+      // Check if coordinates are valid numbers before passing to the map
+      if (pt.lat === null || pt.lng === null || pt.lat === undefined) {
+        return null; 
       }
-
-      ctx.setLineDash([]);
-    }
+      const containerPt = map.latLngToContainerPoint([pt.lat, pt.lng]);
+      return { x: containerPt.x, y: containerPt.y };
+    });
 
     // ---- draw predicted lines ----
     for (let i = 1; i < predPts.length; i++) {
-      const strokeStyle = !p.level[trajZoom].masks[i] || !p.level[trajZoom].masks[i - 1]
-        ? config.colors.masked
-        : config.colors.true;
-      ctx.strokeStyle = strokeStyle;
+      const start = predPts[i - 1];
+      const end = predPts[i];
+
+      // Skip if this segment involves a null point OR is explicitly marked as padding
+      if (!start || !end || p.level[trajZoom].padding[i]) continue;
+
+      ctx.strokeStyle = config.colors.masked;
       ctx.lineWidth = config.lineWidthScale;
 
       ctx.beginPath();
-      ctx.moveTo(predPts[i - 1].x, predPts[i - 1].y);
-      ctx.lineTo(predPts[i].x, predPts[i].y);
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
       ctx.stroke();
     }
-
-    // Draw masked points
-    if (zoom >= config.dotsZoom && showDots) {
-      ctx.fillStyle = config.colors.masked;
-      for (let i = 0; i < predPts.length; i++) {
-        if (p.level[trajZoom].masks[i]) continue;
-        ctx.beginPath();
-        ctx.arc(predPts[i].x, predPts[i].y, config.radiusScale, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // ---- draw true lines ----
-    if (showGroundTruth) {
-      ctx.strokeStyle = config.colors.truePoints;
-      ctx.lineWidth = config.lineWidthScale;
-      ctx.beginPath();
-      ctx.moveTo(truePts[0].x, truePts[0].y);
-      for (let i = 1; i < truePts.length; i++) {
-        ctx.lineTo(truePts[i].x, truePts[i].y);
-      }
-      ctx.stroke();
-    }
-
-    // ---- draw true points ----
-    if (zoom >= config.dotsZoom && showDots) {
-      ctx.fillStyle = config.colors.truePoints;
-      for (let i = 0; i < truePts.length; i++) {
-        if (!showGroundTruth && !p.level[trajZoom].masks[i]) continue;
-        ctx.beginPath();
-        ctx.arc(
-          truePts[i].x,
-          truePts[i].y,
-          config.radiusScale,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
-      }
-    }
-
-    // ---------------- Start/End Points ----------------
-    const radius = config.radiusScale;
-    ctx.beginPath();
-    ctx.arc(truePts[0].x, truePts[0].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = config.colors.start;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(truePts[truePts.length - 1].x, truePts[truePts.length - 1].y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = config.colors.end;
-    ctx.fill();
   });
 
   idsInViewCallback(idsInView);

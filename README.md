@@ -2,10 +2,10 @@
  `ssh -L 8080:localhost:5173 MHGIN-strato-hengyu`
 
 ## Dev
-client: 
+### client
 cd client
 npm run dev
 
-server:
+### server
 cd server
-fastapi dev src/server
+fastapi dev src/server --port 4000

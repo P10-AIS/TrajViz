@@ -1,14 +1,11 @@
 import { createContext, useContext, useState, type JSX } from 'react';
 import type { Polygon } from '../types/Polygon';
-import type { Trajectory } from '../types/Trajectory';
 import type { GeoImage } from '../types/GeoImage';
-import type { Prediction } from '../types/Prediction';
+import type { Trajectory } from '../types/Prediction';
 import { useLocalStorageState } from './LocalStorageState';
 import type { DrawConfig } from '../types/DrawConfig';
 
 interface AppContextType {
-    trajectories: Trajectory[];
-    setTrajectories: (trajectories: Trajectory[]) => void;
     polygons: Polygon[];
     setPolygons: (polygons: Polygon[]) => void;
     eezOutlineVisible: boolean;
@@ -51,8 +48,10 @@ interface AppContextType {
     setShowESPG3034: (show: boolean) => void;
     showModelPredictions: Record<string, boolean>;
     setShowModelPredictions: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-    modelPredictions: Record<string, Prediction[]>;
-    setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, Prediction[]>>>;
+    modelPredictions: Record<string, Trajectory[]>;
+    setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, Trajectory[]>>>;
+    labels: Record<string, Trajectory[]>;
+    setLabels: React.Dispatch<React.SetStateAction<Record<string, Trajectory[]>>>;
     fullPredictionFidelity: boolean;
     setFullPredictionFidelity: (fidelity: boolean) => void;
     enableShipSizeGuide: boolean;
@@ -94,7 +93,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [showPredictionCorrectionLines, setShowPredictionCorrectionLines] = useLocalStorageState('showPredictionCorrectionLines', true);
     const [showGroundTruth, setShowGroundTruth] = useLocalStorageState('showGroundTruth', true);
 
-    const [trajectories, setTrajectories] = useState<Trajectory[]>([]);
     const [numTrajectoriesVisible, setNumTrajectoriesVisible] = useState(0);
     const [polygons, setPolygons] = useState<Polygon[]>([]);
     const [depthImage3034, setDepthImage3034] = useState<GeoImage | null>(null);
@@ -103,7 +101,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [bwDepthImage3857, setBWDepthImage3857] = useState<GeoImage | null>(null);
     const [trafficImage3034, setTrafficImage3034] = useState<GeoImage | null>(null);
     const [trafficImage3857, setTrafficImage3857] = useState<GeoImage | null>(null);
-    const [modelPredictions, setModelPredictions] = useState<Record<string, Prediction[]>>({});
+    const [modelPredictions, setModelPredictions] = useState<Record<string, Trajectory[]>>({});
+    const [labels, setLabels] = useState<Record<string, Trajectory[]>>({});
     const [shipSizeGuideImage, setShipSizeGuideImage] = useState<HTMLImageElement | null>(null);
     const [drawConfig, setDrawConfig] = useState<DrawConfig>({
         colors: {
@@ -123,8 +122,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
 
 
     const value: AppContextType = {
-        trajectories,
-        setTrajectories,
         polygons,
         setPolygons,
         eezOutlineVisible: eezOutlineVisible,
@@ -169,6 +166,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowModelPredictions,
         modelPredictions,
         setModelPredictions,
+        labels,
+        setLabels,
         fullPredictionFidelity,
         setFullPredictionFidelity,
         enableShipSizeGuide,

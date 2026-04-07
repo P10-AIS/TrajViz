@@ -1,17 +1,9 @@
 import { getBoundingBox } from "./bounds";
 
-type RawPoint = Array<number>
-type RawTrajectory = Array<RawPoint>
 type RawMultiPolygon = number[][][][];
-type RawPredictions = {
-    predictions: number[][][];
+export type RawPoints = {
+    points: number[][][];
 }
-
-export type ParsedTrajectory = {
-    id: number;
-    messages: { point: { lat: number; lng: number }; }[];
-    boundingBox: { minLat: number; minLng: number; maxLat: number; maxLng: number };
-};
 
 export type ParsedPolygon = {
     outline: {
@@ -24,30 +16,13 @@ export type ParsedPolygon = {
     }[];
 };
 
-export type ParsedPrediction = {
+export type ParsedTrajectory = {
     trajectoryId: number;
-    masks: boolean[];
-    predictedPoints: { lat: number; lng: number }[];
-    truePoints: { lat: number; lng: number }[];
-    boundingBoxPredicted: { minLat: number; minLng: number; maxLat: number; maxLng: number };
-    boundingBoxTrue: { minLat: number; minLng: number; maxLat: number; maxLng: number };
+    padding: boolean[];
+    points: { lat: number; lng: number }[];
+    boundingBox: { minLat: number; minLng: number; maxLat: number; maxLng: number };
 }
 
-export function parseTrajectories(data: RawTrajectory[]): ParsedTrajectory[] {
-    return data.map((traj, idx) => {
-        const messages = traj.map((pt) => ({
-            point: { lat: pt[0], lng: pt[1] },
-        }));
-
-        const points = messages.map(msg => msg.point);
-
-        return {
-            id: idx,
-            boundingBox: getBoundingBox(points),
-            messages,
-        };
-    })
-}
 
 export function parseMultiPolygon(data: RawMultiPolygon): ParsedPolygon[] {
     return data.map((polygon) => {
@@ -72,26 +47,19 @@ export function parseMultiPolygon(data: RawMultiPolygon): ParsedPolygon[] {
     });
 }
 
-export function parsePredictions(data: RawPredictions): ParsedPrediction[] {
-    const predictions = data.predictions.map((pred, idx) => {
-        const masks = pred.map(pt => pt[0] === 1);
-
-        const predictedPoints = pred.map(pt => ({
-            lat: pt[1],
-            lng: pt[2],
-        }));
-        const truePoints = pred.map(pt => ({
-            lat: pt[3],
-            lng: pt[4],
+export function parsePoints(data: RawPoints): ParsedTrajectory[] {
+    const predictions = data.points.map((pred, idx) => {
+        const padding = pred.map(pt => (pt[0] === undefined || pt[0] === null));
+        const points = pred.map(pt => ({
+            lat: pt[0],
+            lng: pt[1],
         }));
 
         return {
             trajectoryId: idx,
-            masks,
-            predictedPoints,
-            truePoints,
-            boundingBoxPredicted: getBoundingBox(predictedPoints),
-            boundingBoxTrue: getBoundingBox(truePoints),
+            padding,
+            points,
+            boundingBox: getBoundingBox(points),
         };
     });
 

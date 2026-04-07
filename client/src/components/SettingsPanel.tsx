@@ -7,6 +7,8 @@ function SettingsPanel() {
     const ctx = useAppContext();
     const inViewCtx = useInViewContext();
     const [hidden, setHidden] = useState(true);
+    const [updatingPredictions, setUpdatingPredictions] = useState(false);
+    const [updatingLabels, setUpdatingLabels] = useState(false);
 
     async function handleDeletePrediction(modelName: string) {
         if (!window.confirm(`Are you sure you want to delete prediction for ${modelName}?`)) {
@@ -54,6 +56,35 @@ function SettingsPanel() {
             return prev;
         });
     }
+
+    async function handleUpdateBackendPredictions() {
+        setUpdatingPredictions(true);
+        try {
+            const res = await fetch("/api/update_predictions", { method: "POST" });
+            if (!res.ok) {
+                throw new Error("Failed to update backend predictions");
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setUpdatingPredictions(false);
+        }
+    }
+
+    async function handleUpdateBackendLabels() {
+        setUpdatingLabels(true);
+        try {
+            const res = await fetch("/api/update_labels", { method: "POST" }); 
+            if (!res.ok) {
+                throw new Error("Failed to update backend labels");
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setUpdatingLabels(false);
+        }
+    }
+
 
     return (
         <div className="absolute top-5 left-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm">
@@ -205,7 +236,7 @@ function SettingsPanel() {
                             <input
                                 type="range"
                                 min={0}
-                                max={ctx.trajectories.length}
+                                max={1000}
                                 value={ctx.numTrajectoriesVisible}
                                 onChange={(e) => ctx.setNumTrajectoriesVisible(parseInt(e.target.value))}
                             />
@@ -349,7 +380,13 @@ function SettingsPanel() {
                                 onChange={(e) => ctx.setTrafficImageOpacity(parseFloat(e.target.value))}
                             />
                         </div>
-
+                        <hr className="border-slate-300"></hr>
+                        <button onClick={handleUpdateBackendPredictions} className="rounded bg-blue-600 text-white py-2 px-4 hover:bg-blue-700 transition-colors" disabled={updatingPredictions}>
+                            {updatingPredictions ? "Updating..." : "Update BE Predictions"}
+                        </button>
+                        <button onClick={handleUpdateBackendLabels} className="rounded bg-blue-600 text-white py-2 px-4 hover:bg-blue-700 transition-colors" disabled={updatingLabels}>
+                            {updatingLabels ? "Updating..." : "Update BE Labels"}
+                        </button>
                     </div>
                 )
             }

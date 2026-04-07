@@ -3,14 +3,12 @@ import type { Point } from "./Point";
 import type { ZoomLevels } from "./ZoomLevels";
 
 
-export type Prediction = {
+export type Trajectory = {
     trajectoryId: number;
     level: ZoomLevels<{
-        masks: boolean[];
-        truePoints: Point[];
-        predictedPoints: Point[];
-        boundingBoxPredicted: Bound;
-        boundingBoxTrue: Bound;
+        padding: boolean[];
+        points: Point[];
+        boundingBox: Bound;
     }>;
     enabled: boolean;
 };

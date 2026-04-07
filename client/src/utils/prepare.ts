@@ -1,42 +1,10 @@
 import type { Polygon } from "../types/Polygon";
-import type { Trajectory } from "../types/Trajectory";
 import { getBoundingBox } from "./bounds";
-import type { Prediction } from "../types/Prediction";
-import type { ParsedPolygon, ParsedPrediction, ParsedTrajectory } from "./parse";
-
-export function prepareTrajectories(parsedTrajectories: ParsedTrajectory[]): Trajectory[] {
-    const minZoom = 3;
-    const maxZoom = 9;
-
-    const minStep = 1;
-    const maxStep = 600;
-
-
-    const trajectories = parsedTrajectories.map((traj) => {
-        const zooms = [];
-
-        for (let zoom = 1; zoom <= 18; zoom++) {
-            const step = maxStep - ((zoom - minZoom) / (maxZoom - minZoom)) * (maxStep - minStep);
-            const stepInt = Math.max(1, Math.round(step));
-
-            const messages = simplify(traj.messages, stepInt);
-            const points = messages.map(msg => msg.point);
-            const simplifiedTrajectory = {
-                messages,
-                boundingBox: getBoundingBox(points),
-            };
-            zooms.push(simplifiedTrajectory);
-        };
-
-        return {
-            id: traj.id,
-            level: zooms,
-        }
-    });
-
-    return trajectories;
-}
-
+import type { Trajectory } from "../types/Prediction";
+import type { ParsedPolygon, ParsedTrajectory } from "./parse";
+import type { ZoomLevels } from "../types/ZoomLevels";
+import type { Point } from "../types/Point";
+import type { Bound } from "../types/Bound";
 
 export function prepareEezPolygons(parsedPolygons: ParsedPolygon[]): Polygon[] {
     const minZoom = 3;
@@ -80,32 +48,32 @@ export function prepareEezPolygons(parsedPolygons: ParsedPolygon[]): Polygon[] {
     return polygons;
 }
 
-export function preparePredictions(parsedPredictions: ParsedPrediction[]): Prediction[] {
+export function preparePoints(parsedPoints: ParsedTrajectory[]): Trajectory[] {
     const minZoom = 3;
     const maxZoom = 9;
 
     const minStep = 1;
     const maxStep = 600;
 
-    const predictions = parsedPredictions.map((pred) => {
-        const zooms = []
+    const points = parsedPoints.map((pred) => {
+        const zooms: ZoomLevels<{
+                padding: boolean[];
+                points: Point[];
+                boundingBox: Bound;
+            }> = []
 
         for (let zoom = 1; zoom <= 18; zoom++) {
             const step = maxStep - ((zoom - minZoom) / (maxZoom - minZoom)) * (maxStep - minStep);
             const stepInt = Math.max(1, Math.round(step));
 
-            const simplifiedMasks = simplify(pred.masks, stepInt);
-            const simplifiedPreds = simplify(pred.predictedPoints, stepInt);
-            const simplifiedTruths = simplify(pred.truePoints, stepInt);
-            const boundingBoxPredicted = getBoundingBox(simplifiedPreds);
-            const boundingBoxTrue = getBoundingBox(simplifiedTruths);
+            const simplifiedPadding = simplify(pred.padding, stepInt);
+            const simplifiedPreds = simplify(pred.points, stepInt);
+            const bb = getBoundingBox(simplifiedPreds);
 
             zooms.push({
-                masks: simplifiedMasks,
-                predictedPoints: simplifiedPreds,
-                truePoints: simplifiedTruths,
-                boundingBoxPredicted,
-                boundingBoxTrue,
+                padding: simplifiedPadding,
+                points: simplifiedPreds,
+                boundingBox: bb,
             });
         }
         return {
@@ -114,8 +82,7 @@ export function preparePredictions(parsedPredictions: ParsedPrediction[]): Predi
             enabled: true,
         };
     });
-
-    return predictions;
+    return points;
 }
 
 

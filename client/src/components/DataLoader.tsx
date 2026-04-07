@@ -1,7 +1,7 @@
 import { useEffect, type JSX } from "react";
 import { useAppContext } from "../contexts/AppContext";
-import { parseMultiPolygon, parsePredictions, parseTrajectories } from "../utils/parse";
-import { prepareEezPolygons, preparePredictions, prepareTrajectories } from "../utils/prepare";
+import { parseMultiPolygon, parsePoints } from "../utils/parse";
+import { prepareEezPolygons, preparePoints } from "../utils/prepare";
 import eezData from '../assets/eez.json';
 import type { GeoImage } from "../types/GeoImage";
 import shipPng from "../assets/boat.png";
@@ -75,24 +75,6 @@ function DataLoader({ children }: { children: JSX.Element }) {
     }, []);
 
     useEffect(() => {
-        const fetchLatestTrajectory = async () => {
-            try {
-                const response = await fetch('/api/trajectories');
-                const data = await response.json();
-                const { trajectory } = data;
-                const parsed = parseTrajectories(trajectory);
-                const zoomed = prepareTrajectories(parsed);
-                ctx.setTrajectories(zoomed);
-                ctx.setNumTrajectoriesVisible(Math.min(zoomed.length, 1000));
-            } catch (err) {
-                console.error('Failed to fetch trajectory:', err);
-            }
-        };
-        fetchLatestTrajectory()
-
-    }, []);
-
-    useEffect(() => {
         const parsed = parseMultiPolygon(eezData.features[0].geometry.coordinates);
         const zoomed = prepareEezPolygons(parsed);
         ctx.setPolygons(zoomed);
@@ -101,18 +83,16 @@ function DataLoader({ children }: { children: JSX.Element }) {
     useEffect(() => {
         const fetchModelsAndPredictions = async () => {
             try {
-                const modelRes = await fetch('/api/predictions');
-                const { models } = await modelRes.json();
+                const predictionsRes = await fetch('/api/predictions');
+                
+                const responseData = await predictionsRes.json();
+                const predictions = responseData.points;
 
-                for (const model of models) {
-                    const response = await fetch(
-                        `/api/predictions/${model}`
-                    );
-                    const data = await response.json();
-
-                    const parsed = parsePredictions(data);
-                    const zoomed = preparePredictions(parsed);
-
+                for (const model in predictions) {
+                    const data = predictions[model];
+                    const parsed = parsePoints(data);
+                    const zoomed = preparePoints(parsed);
+                    
                     ctx.setModelPredictions((prev) => ({
                         ...prev,
                         [model]: zoomed,
@@ -124,6 +104,32 @@ function DataLoader({ children }: { children: JSX.Element }) {
         };
 
         fetchModelsAndPredictions();
+    }, []);
+
+    useEffect(() => {
+        const fetchLabels = async () => {
+            try {
+                const labelsRes = await fetch('/api/labels');
+                
+                const responseData = await labelsRes.json();
+                const labels = responseData.points;
+
+                for (const dataset in labels) {
+                    const data = labels[dataset];
+                    const parsed = parsePoints(data);
+                    const zoomed = preparePoints(parsed);
+                    
+                    ctx.setLabels((prev) => ({
+                        ...prev,
+                        [dataset]: zoomed,
+                    }));
+                }
+            } catch (err) {
+                console.error('Failed to fetch labels:', err);
+            }
+        };
+
+        fetchLabels();
     }, []);
 
     useEffect(() => {
