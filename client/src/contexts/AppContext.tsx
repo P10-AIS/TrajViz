@@ -64,10 +64,6 @@ interface AppContextType {
     setShowTrajectoryDots: (show: boolean) => void;
     showPredictionDots: boolean;
     setShowPredictionDots: (show: boolean) => void;
-    showPredictionCorrectionLines: boolean;
-    setShowPredictionCorrectionLines: (show: boolean) => void;
-    showGroundTruth: boolean;
-    setShowGroundTruth: (show: boolean) => void;
     drawConfig: DrawConfig;
     setDrawConfig: (config: DrawConfig) => void;
 }
@@ -93,8 +89,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [enableShipSizeGuide, setEnableShipSizeGuide] = useLocalStorageState('enableShipSizeGuide', false);
     const [showTrajectoryDots, setShowTrajectoryDots] = useLocalStorageState('showTrajectoryDots', true);
     const [showPredictionDots, setShowPredictionDots] = useLocalStorageState('showPredictionDots', true);
-    const [showPredictionCorrectionLines, setShowPredictionCorrectionLines] = useLocalStorageState('showPredictionCorrectionLines', true);
-    const [showGroundTruth, setShowGroundTruth] = useLocalStorageState('showGroundTruth', true);
     const [trajectoryDensity, setTrajectoryDensity] = useLocalStorageState('trajectoryDensity', 0.1);
 
     const [polygons, setPolygons] = useState<Polygon[]>([]);
@@ -183,10 +177,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowTrajectoryDots,
         showPredictionDots,
         setShowPredictionDots,
-        showPredictionCorrectionLines,
-        setShowPredictionCorrectionLines,
-        showGroundTruth,
-        setShowGroundTruth,
         drawConfig,
         setDrawConfig,
     };
