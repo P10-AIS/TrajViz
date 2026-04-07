@@ -10,16 +10,22 @@ import Map3857 from './components/Map3857';
 import TileLayer3857 from './components/TileLayer3857';
 import InViewPanel from './components/InViewPanel';
 import { useInViewContext } from './contexts/InViewContext';
+import { Projection } from './types/projection';
+
 
 function App() {
   const appCtx = useAppContext();
   const inViewCtx = useInViewContext();
-
-  const MapComponent = appCtx.showESPG3034 ? Map3034 : Map3857;
-  const TileLayerComponent = appCtx.showESPG3034 ? TileLayer3034 : TileLayer3857;
-  const depthImage = appCtx.showESPG3034 ? appCtx.depthImage3034 : appCtx.depthImage3857;
-  const bwDepthImage = appCtx.showESPG3034 ? appCtx.bwDepthImage3034 : appCtx.bwDepthImage3857;
-  const trafficImage = appCtx.showESPG3034 ? appCtx.trafficImage3034 : appCtx.trafficImage3857;
+  const [MapComponent, TileLayerComponent] = (() => {
+    switch (appCtx.projection) {
+      case Projection.EPSG3034:
+        return [Map3034, TileLayer3034];
+      case Projection.EPSG3857:
+        return [Map3857, TileLayer3857];
+      default:
+        return [Map3857, TileLayer3857];
+    }
+  })();
 
   function handlePredictionsInView(modelName: string, idsInView: Set<number>) {
     inViewCtx.setModelPredictionsInView(prev => {
@@ -52,14 +58,11 @@ function App() {
         <MapComponent>
           <>
             {appCtx.showMapTiles && <TileLayerComponent />}
-            {/* {appCtx.showDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(depthImage, appCtx.depthImageOpacity, info)} />}
-            {appCtx.showBWDepthImage && <CanvasLayer zIndex={1} drawMethod={(info) => drawGeoImage(bwDepthImage, appCtx.bwDepthImageOpacity, info)} />}
-            {appCtx.showTrafficImage && <CanvasLayer zIndex={2} drawMethod={(info) => drawGeoImage(trafficImage, appCtx.trafficImageOpacity, info)} />}
-            {appCtx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(appCtx.polygons, appCtx.fullEezFidelity, info, appCtx.drawConfig)} />} */}
             {Object.entries(appCtx.imageOverlays).map(([name, image]) => (
               appCtx.showImageOverlay[name] &&
               <CanvasLayer key={name} zIndex={1} drawMethod={(info) => drawGeoImage(image, info)} />
             ))}
+            {appCtx.eezOutlineVisible && <CanvasLayer zIndex={3} drawMethod={(info) => drawPolygons(appCtx.polygons, appCtx.fullEezFidelity, info, appCtx.drawConfig)} />} 
 
             {Object.entries(appCtx.labels).map(([labelName, trajectories]) => (
               appCtx.showLabels[labelName] &&

@@ -17,18 +17,6 @@ interface AppContextType {
     setFullTrajectoryFidelity: (fidelity: boolean) => void;
     fullEezFidelity: boolean;
     setFullEezFidelity: (fidelity: boolean) => void;
-    depthImage3034: GeoImage | null;
-    setDepthImage3034: (image: GeoImage | null) => void;
-    bwDepthImage3034: GeoImage | null;
-    setBWDepthImage3034: (image: GeoImage | null) => void;
-    bwDepthImage3857: GeoImage | null;
-    setBWDepthImage3857: (image: GeoImage | null) => void;
-    depthImage3857: GeoImage | null;
-    setDepthImage3857: (image: GeoImage | null) => void;
-    trafficImage3034: GeoImage | null;
-    setTrafficImage3034: (image: GeoImage | null) => void;
-    trafficImage3857: GeoImage | null;
-    setTrafficImage3857: (image: GeoImage | null) => void;
     showMapTiles: boolean;
     setShowMapTiles: (show: boolean) => void;
     showDepthImage: boolean;
@@ -43,8 +31,6 @@ interface AppContextType {
     setBWDepthImageOpacity: (opacity: number) => void;
     trafficImageOpacity: number;
     setTrafficImageOpacity: (opacity: number) => void;
-    showESPG3034: boolean;
-    setShowESPG3034: (show: boolean) => void;
     showModelPredictions: Record<string, boolean>;
     setShowModelPredictions: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
     modelPredictions: Record<string, Trajectory[]>;
@@ -89,7 +75,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [depthImageOpacity, setDepthImageOpacity] = useLocalStorageState('depthImageOpacity', 1);
     const [bwDepthImageOpacity, setBWDepthImageOpacity] = useLocalStorageState('bwDepthImageOpacity', 1);
     const [trafficImageOpacity, setTrafficImageOpacity] = useLocalStorageState('trafficImageOpacity', 1);
-    const [showESPG3034, setShowESPG3034] = useLocalStorageState('showESPG3034', true);
     const [fullPredictionFidelity, setFullPredictionFidelity] = useLocalStorageState('fullPredictionFidelity', false);
     const [showModelPredictions, setShowModelPredictions] = useLocalStorageState<Record<string, boolean>>('showModelPredictions', {});
     const [showLabels, setShowLabels] = useLocalStorageState<Record<string, boolean>>('showLabels', {});
@@ -103,12 +88,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
 
 
     const [polygons, setPolygons] = useState<Polygon[]>([]);
-    const [depthImage3034, setDepthImage3034] = useState<GeoImage | null>(null);
-    const [depthImage3857, setDepthImage3857] = useState<GeoImage | null>(null);
-    const [bwDepthImage3034, setBWDepthImage3034] = useState<GeoImage | null>(null);
-    const [bwDepthImage3857, setBWDepthImage3857] = useState<GeoImage | null>(null);
-    const [trafficImage3034, setTrafficImage3034] = useState<GeoImage | null>(null);
-    const [trafficImage3857, setTrafficImage3857] = useState<GeoImage | null>(null);
     const [modelPredictions, setModelPredictions] = useState<Record<string, Trajectory[]>>({});
     const [labels, setLabels] = useState<Record<string, Trajectory[]>>({});
     const [shipSizeGuideImage, setShipSizeGuideImage] = useState<HTMLImageElement | null>(null);
@@ -140,18 +119,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setFullTrajectoryFidelity,
         fullEezFidelity,
         setFullEezFidelity,
-        depthImage3034: depthImage3034,
-        setDepthImage3034: setDepthImage3034,
-        depthImage3857: depthImage3857,
-        setDepthImage3857: setDepthImage3857,
-        bwDepthImage3034: bwDepthImage3034,
-        setBWDepthImage3034: setBWDepthImage3034,
-        bwDepthImage3857: bwDepthImage3857,
-        setBWDepthImage3857: setBWDepthImage3857,
-        trafficImage3034: trafficImage3034,
-        setTrafficImage3034: setTrafficImage3034,
-        trafficImage3857: trafficImage3857,
-        setTrafficImage3857: setTrafficImage3857,
         showMapTiles,
         setShowMapTiles,
         showDepthImage,
@@ -166,8 +133,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowTrafficImage,
         trafficImageOpacity,
         setTrafficImageOpacity,
-        showESPG3034,
-        setShowESPG3034,
         showModelPredictions,
         setShowModelPredictions,
         modelPredictions,

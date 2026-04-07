@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppContext } from "../contexts/AppContext";
 import { IoMdCog, IoMdClose } from "react-icons/io";
 import { useInViewContext } from "../contexts/InViewContext";
@@ -10,6 +10,7 @@ function SettingsPanel() {
     const [hidden, setHidden] = useState(true);
     const [updatingPredictions, setUpdatingPredictions] = useState(false);
     const [updatingLabels, setUpdatingLabels] = useState(false);
+    const [imageOverlayCollapsed, setImageOverlayCollapsed] = useState(true);
 
     function handleTogglePrediction(checked: boolean, modelName: string) {
         ctx.setShowModelPredictions({
@@ -31,6 +32,16 @@ function SettingsPanel() {
             [labelName]: checked
         })
     }
+
+    useEffect(() => {
+        const newShowImageOverlay: Record<string, boolean> = {};
+        for (const name of Object.keys(ctx.imageOverlays)) {
+            if (name.includes(`PROJ_${ctx.projection.replace(':', '.')}`)) {
+                newShowImageOverlay[name] = ctx.showImageOverlay[name] || false;
+            }
+        }
+        ctx.setShowImageOverlay(newShowImageOverlay);
+    }, [ctx, ctx.projection])
 
     async function handleUpdateBackendPredictions() {
         setUpdatingPredictions(true);
@@ -85,16 +96,6 @@ function SettingsPanel() {
 
                         </div>
                         <hr className="border-slate-300"></hr>
-
-                        {/* espg3034 toggle
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Use EPSG:3034</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.showESPG3034}
-                                onChange={(e) => ctx.setShowESPG3034(e.target.checked)}
-                            />
-                        </div> */}
                         {Object.keys(Projection).map((projKey) => {
                             const projValue = Projection[projKey as keyof typeof Projection];
                             return (
@@ -264,60 +265,86 @@ function SettingsPanel() {
                         </div>
 
                         <hr className="border-slate-300"></hr>
-                        <div className="p-4 bg-gray-100 rounded-lg space-y-4">
-                            {Object.keys(ctx.imageOverlays).map((name) => {
-                                // Regex to extract the base name and the PROJ value
-                                // Matches the prefix and the content inside PROJ_...
-                                const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (match, base, proj) => {
-                                    return `${base}_${proj.replace('.', ':')}`;
-                                });
+                        {/* Image overlays */}
+                        <div className="bg-gray-100 rounded overflow-hidden">
+                            <button 
+                                onClick={() => setImageOverlayCollapsed(!imageOverlayCollapsed)}
+                                className="w-full flex items-center justify-between p-4 hover:bg-gray-200 transition-colors focus:outline-none"
+                            >
+                                <span className="text-sm font-semibold text-gray-700">
+                                    Image Overlays
+                                </span>
+                                <svg 
+                                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${imageOverlayCollapsed ? '' : 'rotate-180'}`} 
+                                    fill="none" 
+                                    viewBox="0 0 24 24" 
+                                    stroke="currentColor"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
 
-                                return (
-                                    <div key={name} className="flex flex-col p-2 bg-white rounded border border-gray-200 shadow-sm transition-all hover:border-blue-400">
-                                        {/* Top Row: Name and Checkbox */}
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span 
-                                                className="text-sm font-medium text-gray-700 truncate cursor-help"
-                                                title={name} // Displays full original string on hover
-                                            >
-                                                {formattedName}
-                                            </span>
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                                checked={ctx.showImageOverlay[name] || false}
-                                                onChange={(e) => ctx.setShowImageOverlay({
-                                                    ...ctx.showImageOverlay,
-                                                    [name]: e.target.checked
-                                                })}
-                                            />
-                                        </div>
+                            {/* Collapsible Content */}
+                            {!imageOverlayCollapsed && (
+                                <div className="p-4 pt-0 space-y-4">
+                                    {Object.keys(ctx.imageOverlays).map((name) => {
+                                        // Regex to extract the base name and the PROJ value
+                                        const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (match, base, proj) => {
+                                            return `${base}_${proj.replace('.', ':')}`;
+                                        });
 
-                                        {/* Bottom Row: Full-width Slider */}
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-xs text-gray-400">Opacity</span>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={1}
-                                                step={0.01}
-                                                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                                                value={ctx.imageOverlays[name]?.opacity || 1}
-                                                onChange={(e) => ctx.setImageOverlays({
-                                                    ...ctx.imageOverlays,
-                                                    [name]: {
-                                                        ...ctx.imageOverlays[name],
-                                                        opacity: parseFloat(e.target.value)
-                                                    }
-                                                })}
-                                            />
-                                            <span className="text-xs font-mono text-gray-500 w-8">
-                                                {Math.round((ctx.imageOverlays[name]?.opacity || 1) * 100)}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        if (!name.includes(`PROJ_${ctx.projection.replace(':', '.')}`)) {
+                                            return null; // Skip overlays that don't match the current projection
+                                        }
+
+                                        return (
+                                            <div key={name} className="flex flex-col p-2 bg-white rounded border border-gray-200 shadow-sm transition-all hover:border-blue-400">
+                                                {/* Top Row: Name and Checkbox */}
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span 
+                                                        className="text-sm font-medium text-gray-700 truncate cursor-help"
+                                                        title={name}
+                                                    >
+                                                        {formattedName}
+                                                    </span>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                                        checked={ctx.showImageOverlay[name] || false}
+                                                        onChange={(e) => ctx.setShowImageOverlay({
+                                                            ...ctx.showImageOverlay,
+                                                            [name]: e.target.checked
+                                                        })}
+                                                    />
+                                                </div>
+
+                                                {/* Bottom Row: Full-width Slider */}
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-xs text-gray-400">Opacity</span>
+                                                    <input
+                                                        type="range"
+                                                        min={0}
+                                                        max={1}
+                                                        step={0.01}
+                                                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                        value={ctx.imageOverlays[name]?.opacity || 1}
+                                                        onChange={(e) => ctx.setImageOverlays({
+                                                            ...ctx.imageOverlays,
+                                                            [name]: {
+                                                                ...ctx.imageOverlays[name],
+                                                                opacity: parseFloat(e.target.value)
+                                                            }
+                                                        })}
+                                                    />
+                                                    <span className="text-xs font-mono text-gray-500 w-8">
+                                                        {Math.round((ctx.imageOverlays[name]?.opacity || 1) * 100)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                         <hr className="border-slate-300"></hr>
                         <button onClick={handleUpdateBackendPredictions} className="rounded bg-blue-600 text-white py-2 px-4 hover:bg-blue-700 transition-colors" disabled={updatingPredictions}>
