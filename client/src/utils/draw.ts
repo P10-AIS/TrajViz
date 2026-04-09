@@ -35,6 +35,7 @@ export const drawTrajectories = (
   density: number,
   fullTrajectoryFidelity: boolean,
   showDots: boolean,
+  idsInViewCallback: (idsInView: Set<number>) => void,
   info: DrawInfo,
   config: DrawConfig,
 ) => {
@@ -52,11 +53,12 @@ export const drawTrajectories = (
 
   const zoom = map.getZoom();
   const trajZoom = fullTrajectoryFidelity ? 17 : zoom;
+  const idsInView = new Set<number>();
 
   trajectories.slice(0, Math.ceil(trajectories.length * density)).forEach((t) => {
     if (t.level[trajZoom].points.length === 0) return;
     if (!isBoundingBoxInView(t.level[trajZoom].boundingBox, viewBox)) return;
-
+    idsInView.add(t.trajectoryId);
     const pts = t.level[trajZoom].points.map((p) => {
       if (p.lat === null || p.lng === null || p.lat === undefined) {
         return null;
@@ -113,6 +115,7 @@ export const drawTrajectories = (
       ctx.fill();
     }
   });
+  idsInViewCallback(idsInView);
 };
 
 export function drawPredictions(

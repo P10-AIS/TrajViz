@@ -17,7 +17,7 @@ function SettingsPanel() {
             ...ctx.showModelPredictions,
             [modelName]: checked
         })
-        inViewCtx.setModelPredictionsInView(prev => {
+        inViewCtx.setTrajectoriesInView(prev => {
             if (!checked) {
                 const newPrev = { ...prev };
                 delete newPrev[modelName];
@@ -204,6 +204,16 @@ function SettingsPanel() {
                                 type="checkbox"
                                 checked={ctx.fullTrajectoryFidelity}
                                 onChange={(e) => ctx.setFullTrajectoryFidelity(e.target.checked)}
+                            />
+                        </div>
+
+                        {/* Toggle trajectory dots */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Show Trajectory Dots</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.showTrajectoryDots}
+                                onChange={(e) => ctx.setShowTrajectoryDots(e.target.checked)}
                             />
                         </div>
                         <div className="flex flex-col">

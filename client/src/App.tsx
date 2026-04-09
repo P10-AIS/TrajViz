@@ -31,8 +31,8 @@ function App() {
     }
   })();
 
-  function handlePredictionsInView(modelName: string, idsInView: Set<number>) {
-    inViewCtx.setModelPredictionsInView(prev => {
+  function handleTrajectoriesInView(modelName: string, idsInView: Set<number>) {
+    inViewCtx.setTrajectoriesInView(prev => {
       const prevSet = prev[modelName];
 
       if (prevSet && setsEqual(prevSet, idsInView)) {
@@ -76,7 +76,7 @@ function App() {
 
             {Object.entries(appCtx.modelPredictions).map(([modelName, predictions]) => (
               appCtx.showModelPredictions[modelName] &&
-              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) => drawPredictions(predictions, appCtx.trajectoryDensity, appCtx.fullPredictionFidelity, appCtx.showPredictionDots, (idsInView) => handlePredictionsInView(modelName, idsInView), info, appCtx.drawConfig)} />
+              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) => drawPredictions(predictions, appCtx.trajectoryDensity, appCtx.fullPredictionFidelity, appCtx.showPredictionDots, (idsInView) => handleTrajectoriesInView(modelName, idsInView), info, appCtx.drawConfig)} />
             ))}
 
             {appCtx.enableShipSizeGuide && <CanvasLayer zIndex={6} drawMethod={(info) => drawShipCursor(info, appCtx.shipSizeGuideImage)} />}

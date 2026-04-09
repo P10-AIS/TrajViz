@@ -57,7 +57,7 @@ function InViewPanel() {
 
                     <hr className="border-slate-300" />
 
-                    {Object.entries(inViewCtx.modelPredictionsInView).map(
+                    {Object.entries(inViewCtx.trajectoriesInView).map(
                         ([modelName, ids]) => {
                             const predictions = appCtx.modelPredictions[modelName];
                             if (!predictions || ids.size === 0) return null;

@@ -1,8 +1,8 @@
 import { createContext, useContext, useState } from "react";
 
 type InViewContextType = {
-    modelPredictionsInView: Record<string, Set<number>>;
-    setModelPredictionsInView: React.Dispatch<
+    trajectoriesInView: Record<string, Set<number>>;
+    setTrajectoriesInView: React.Dispatch<
         React.SetStateAction<Record<string, Set<number>>>
     >;
 };
@@ -15,7 +15,7 @@ export const InViewProvider = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <InViewContext.Provider
-            value={{ modelPredictionsInView, setModelPredictionsInView }}
+            value={{ trajectoriesInView: modelPredictionsInView, setTrajectoriesInView: setModelPredictionsInView }}
         >
             {children}
         </InViewContext.Provider>
