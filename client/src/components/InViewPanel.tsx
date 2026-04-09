@@ -49,21 +49,13 @@ function InViewPanel() {
         handleTogglePrediction(enabled, modelName);
 
     return (
-        <div className="absolute top-5 right-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm">
-            {/* Collapsed */}
+        <div className="bg-white rounded p-4 shadow-lg overflow-auto text-slate-600 text-sm">
             {hidden && (
                 <div className="flex">
-                    <button
-                        className="hover:scale-110 transition-transform hover:cursor-pointer"
-                        onClick={() => setHidden(false)}
-                        title="In-view predictions"
-                    >
-                        <IoMdEye size={24} />
-                    </button>
+                    <button onClick={() => setHidden(false)}><IoMdEye size={24} /></button>
                 </div>
             )}
 
-            {/* Expanded */}
             {!hidden && (
                 <div className="w-72 flex flex-col space-y-2">
                     {/* Header */}

@@ -13,6 +13,8 @@ import TileLayer5070 from './components/TileLayer5070';
 import InViewPanel from './components/InViewPanel';
 import { useInViewContext } from './contexts/InViewContext';
 import { Projection } from './types/projection';
+import SceneManager from './components/SceneManager';
+import ViewPanel from './components/ViewPanel';
 
 
 function App() {
@@ -57,7 +59,7 @@ function App() {
   return (
     <div style={{ width: '100%', height: '100vh' }}>
       <SettingsPanel />
-      <InViewPanel />
+      <ViewPanel />
       <DataLoader >
         <MapComponent>
           <>
