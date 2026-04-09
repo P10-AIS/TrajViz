@@ -8,14 +8,46 @@ export interface Snapshot {
     timestamp: number;
     name: string;
     appData: AppSnapshot; 
+    enabledPredictions: Record<string, number[]>;
     inViewData: Record<string, number[]>; // Stored as arrays for JSON serialization
 }
 
+
 export const useSnapshotManager = () => {
+
     const appContext = useAppContext();
     const inViewContext = useInViewContext();
     const [snapshots, setSnapshots] = useLocalStorageState<Snapshot[]>('app_snapshots', []);
 
+    function syncLabelsWithInViewPredictions(
+        predictions: typeof appContext.modelPredictions,
+        inViewIdsByModel: Record<string, Set<number>>,
+        setLabels: typeof appContext.setLabels
+    ) {
+        const activeInViewIds = new Set<number>();
+        
+        Object.entries(predictions).forEach(([modelName, modelPredictions]) => {
+            const inViewForModel = inViewIdsByModel[modelName] || new Set();
+            
+            modelPredictions.forEach(p => {
+                if (p.enabled && inViewForModel.has(p.trajectoryId)) {
+                    activeInViewIds.add(p.trajectoryId);
+                }
+            });
+        });
+
+        setLabels(prevLabels => {
+            const updated: typeof prevLabels = {};
+            for (const [key, labels] of Object.entries(prevLabels)) {
+                updated[key] = labels.map(l => ({
+                    ...l,
+                    enabled: activeInViewIds.has(l.trajectoryId)
+                }));
+            }
+            return updated;
+        });
+    }
+    
     const takeSnapshot = (name: string) => {
         // 1. Explicitly pick the keys defined in AppSnapshot to avoid saving large objects/blobs
         const appData: AppSnapshot = {
@@ -44,39 +76,61 @@ export const useSnapshotManager = () => {
             serializableInView[key] = Array.from(set as Set<number>);
         }
 
+        const enabledPredictions: Record<string, number[]> = {};
+    
+        Object.entries(appContext.modelPredictions).forEach(([modelName, predictions]) => {
+            enabledPredictions[modelName] = predictions
+                .filter(p => p.enabled)
+                .map(p => p.trajectoryId);
+        });
+
         const newSnapshot: Snapshot = {
             id: crypto.randomUUID(),
             timestamp: Date.now(),
             name,
             appData,
-            inViewData: serializableInView
+            enabledPredictions,
+            inViewData: serializableInView 
         };
 
         setSnapshots(prev => [...prev, newSnapshot]);
+
     };
 
     const restoreSnapshot = (snapshot: Snapshot) => {
-        // 1. Restore AppContext via dynamic setter calls
-        // Assumes your context provides setters named 'setShowLabels', etc.
-        Object.entries(snapshot.appData).forEach(([key, value]) => {
-            const setterName = `set${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof typeof appContext;
-            const setter = appContext[setterName];
-            
-            if (typeof setter === 'function') {
-                (setter as Function)(value);
-            } else {
-                console.warn(`Snapshot Manager: No setter found for property "${key}" (expected "${setterName}")`);
-            }
+    Object.entries(snapshot.appData).forEach(([key, value]) => {
+        const setterName = `set${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof typeof appContext;
+        const setter = appContext[setterName];
+        if (typeof setter === 'function') (setter as Function)(value);
+    });
+
+    const restoredInView: Record<string, Set<number>> = {};
+    for (const [key, arr] of Object.entries(snapshot.inViewData)) {
+        restoredInView[key] = new Set(arr);
+    }
+
+    appContext.setModelPredictions(prevPredictions => {
+        const updatedPredictions = { ...prevPredictions };
+        
+        Object.keys(updatedPredictions).forEach(modelName => {
+            const enabledInSnapshot = new Set(snapshot.enabledPredictions?.[modelName] || []);
+            updatedPredictions[modelName] = updatedPredictions[modelName].map(p => ({
+                ...p,
+                enabled: enabledInSnapshot.has(p.trajectoryId)
+            }));
         });
 
-        // 2. Restore InViewContext (Convert Arrays back to Sets)
-        const restoredInView: Record<string, Set<number>> = {};
-        for (const [key, arr] of Object.entries(snapshot.inViewData)) {
-            restoredInView[key] = new Set(arr);
-        }
-        inViewContext.setModelPredictionsInView(restoredInView);
-    };
+        syncLabelsWithInViewPredictions(
+            updatedPredictions, 
+            restoredInView, 
+            appContext.setLabels
+        );
 
+        return updatedPredictions;
+    });
+
+    inViewContext.setModelPredictionsInView(restoredInView);
+};
     const deleteSnapshot = (id: string) => {
         setSnapshots(prev => prev.filter(s => s.id !== id));
     };
