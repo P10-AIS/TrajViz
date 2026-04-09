@@ -10,10 +10,8 @@ import Map3857 from './components/Map3857';
 import Map5070 from './components/Map5070';
 import TileLayer3857 from './components/TileLayer3857';
 import TileLayer5070 from './components/TileLayer5070';
-import InViewPanel from './components/InViewPanel';
 import { useInViewContext } from './contexts/InViewContext';
 import { Projection } from './types/projection';
-import SceneManager from './components/SceneManager';
 import ViewPanel from './components/ViewPanel';
 
 

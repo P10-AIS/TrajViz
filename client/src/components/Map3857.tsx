@@ -1,5 +1,6 @@
 import { MapContainer, ZoomControl } from "react-leaflet";
 import type { JSX } from "react";
+import ZoomWatcher from "./ZoomWatcher";
 
 function Map3857({ children }: { children: JSX.Element }) {
     return (
@@ -10,6 +11,7 @@ function Map3857({ children }: { children: JSX.Element }) {
             style={{ width: "100%", height: "100%" }}
             zoomControl={false}
         >
+            <ZoomWatcher/>
             <ZoomControl position="bottomright" />
             {children}
         </MapContainer>

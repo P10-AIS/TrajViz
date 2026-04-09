@@ -63,6 +63,8 @@ interface AppContextType {
     setShowImageOverlay: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
     projection: Projection;
     setProjection: (projection: Projection) => void;
+    zoom: number;
+    setZoom: (zoom: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -90,6 +92,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [imageOverlays, setImageOverlays] = useState<Record<string, GeoImage>>({});
     const [showImageOverlay, setShowImageOverlay] = useLocalStorageState<Record<string, boolean>>('showImageOverlay', {});
     const [projection, setProjection] = useLocalStorageState<Projection>('projection', Projection.EPSG3857);
+    const [zoom, setZoom] = useState<number>(5);
 
 
     const [polygonsDK, setPolygonsDK] = useState<Polygon[]>([]);
@@ -168,7 +171,9 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         projection,
         setProjection,
         showImageOverlay,
-        setShowImageOverlay
+        setShowImageOverlay,
+        zoom,
+        setZoom,
     };
 
     return (
