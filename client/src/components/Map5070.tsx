@@ -1,7 +1,7 @@
 import { MapContainer, ZoomControl } from "react-leaflet";
 import type { JSX } from "react";
 import { CRS_5070 } from "../assets/crs";
-import ZoomWatcher from "./ZoomWatcher";
+import MapController from "./MapController";
 
 function Map5070({ children }: { children: JSX.Element }) {
   return (
@@ -13,7 +13,7 @@ function Map5070({ children }: { children: JSX.Element }) {
       style={{ width: "100%", height: "100%" }}
       zoomControl={false}
     >
-      <ZoomWatcher/>
+      <MapController/>
       <ZoomControl position="bottomright" />
       {children}
     </MapContainer>

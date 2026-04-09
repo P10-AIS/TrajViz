@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from "react";
 
-type InViewContextType = {
+export type InViewContextType = {
     modelPredictionsInView: Record<string, Set<number>>;
     setModelPredictionsInView: React.Dispatch<
         React.SetStateAction<Record<string, Set<number>>>

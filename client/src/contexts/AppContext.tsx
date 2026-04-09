@@ -6,7 +6,7 @@ import { useLocalStorageState } from './LocalStorageState';
 import type { DrawConfig } from '../types/DrawConfig';
 import { Projection } from '../types/projection';
 
-interface AppContextType {
+export interface AppContextType {
     polygonsDK: Polygon[];
     setPolygonsDK: (polygons: Polygon[]) => void;
     polygonsUS: Polygon[];
@@ -15,26 +15,12 @@ interface AppContextType {
     setEezDKOutlineVisible: (visible: boolean) => void;
     eezUSOutlineVisible: boolean;
     setEezUSOutlineVisible: (visible: boolean) => void;
-    trajectoriesVisible: boolean;
-    setTrajectoriesVisible: (visible: boolean) => void;
     fullTrajectoryFidelity: boolean;
     setFullTrajectoryFidelity: (fidelity: boolean) => void;
     fullEezFidelity: boolean;
     setFullEezFidelity: (fidelity: boolean) => void;
     showMapTiles: boolean;
     setShowMapTiles: (show: boolean) => void;
-    showDepthImage: boolean;
-    setShowDepthImage: (show: boolean) => void;
-    showBWDepthImage: boolean;
-    setShowBWDepthImage: (show: boolean) => void;
-    showTrafficImage: boolean;
-    setShowTrafficImage: (show: boolean) => void;
-    depthImageOpacity: number;
-    setDepthImageOpacity: (opacity: number) => void;
-    bwDepthImageOpacity: number;
-    setBWDepthImageOpacity: (opacity: number) => void;
-    trafficImageOpacity: number;
-    setTrafficImageOpacity: (opacity: number) => void;
     showModelPredictions: Record<string, boolean>;
     setShowModelPredictions: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
     modelPredictions: Record<string, Trajectory[]>;
@@ -65,6 +51,8 @@ interface AppContextType {
     setProjection: (projection: Projection) => void;
     zoom: number;
     setZoom: (zoom: number) => void;
+    center: [number, number];
+    setCenter: (latlng: [number, number]) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -72,16 +60,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [eezDKOutlineVisible, setDKEezOutlineVisible] = useLocalStorageState('eezDKOutlineVisible', false);
     const [eezUSOutlineVisible, setEezUSOutlineVisible] = useLocalStorageState('eezUSOutlineVisible', false);
-    const [trajectoriesVisible, setTrajectoriesVisible] = useLocalStorageState('trajectoriesVisible', true);
     const [fullTrajectoryFidelity, setFullTrajectoryFidelity] = useLocalStorageState('fullTrajectoryFidelity', false);
     const [fullEezFidelity, setFullEezFidelity] = useLocalStorageState('fullEezFidelity', false);
     const [showMapTiles, setShowMapTiles] = useLocalStorageState('showMapTiles', true);
-    const [showDepthImage, setShowDepthImage] = useLocalStorageState('showDepthImage', false);
-    const [showBWDepthImage, setShowBWDepthImage] = useLocalStorageState('showBWDepthImage', false);
-    const [showTrafficImage, setShowTrafficImage] = useLocalStorageState('showTrafficImage', false);
-    const [depthImageOpacity, setDepthImageOpacity] = useLocalStorageState('depthImageOpacity', 1);
-    const [bwDepthImageOpacity, setBWDepthImageOpacity] = useLocalStorageState('bwDepthImageOpacity', 1);
-    const [trafficImageOpacity, setTrafficImageOpacity] = useLocalStorageState('trafficImageOpacity', 1);
     const [fullPredictionFidelity, setFullPredictionFidelity] = useLocalStorageState('fullPredictionFidelity', false);
     const [showModelPredictions, setShowModelPredictions] = useLocalStorageState<Record<string, boolean>>('showModelPredictions', {});
     const [showLabels, setShowLabels] = useLocalStorageState<Record<string, boolean>>('showLabels', {});
@@ -93,7 +74,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [showImageOverlay, setShowImageOverlay] = useLocalStorageState<Record<string, boolean>>('showImageOverlay', {});
     const [projection, setProjection] = useLocalStorageState<Projection>('projection', Projection.EPSG3857);
     const [zoom, setZoom] = useState<number>(5);
-
+    const [center, setCenter] = useState<[number, number]>([56.15674, 10.21076]);
 
     const [polygonsDK, setPolygonsDK] = useState<Polygon[]>([]);
     const [polygonsUS, setPolygonsUS] = useState<Polygon[]>([]);
@@ -124,26 +105,12 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setEezDKOutlineVisible: setDKEezOutlineVisible,
         eezUSOutlineVisible: eezUSOutlineVisible,
         setEezUSOutlineVisible: setEezUSOutlineVisible,
-        trajectoriesVisible,
-        setTrajectoriesVisible,
         fullTrajectoryFidelity,
         setFullTrajectoryFidelity,
         fullEezFidelity,
         setFullEezFidelity,
         showMapTiles,
         setShowMapTiles,
-        showDepthImage,
-        setShowDepthImage,
-        depthImageOpacity,
-        setDepthImageOpacity,
-        bwDepthImageOpacity,
-        setBWDepthImageOpacity,
-        showBWDepthImage,
-        setShowBWDepthImage,
-        showTrafficImage,
-        setShowTrafficImage,
-        trafficImageOpacity,
-        setTrafficImageOpacity,
         showModelPredictions,
         setShowModelPredictions,
         modelPredictions,
@@ -174,6 +141,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setShowImageOverlay,
         zoom,
         setZoom,
+        center,
+        setCenter,
     };
 
     return (
