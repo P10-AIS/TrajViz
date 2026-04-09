@@ -8,89 +8,46 @@ function InViewPanel() {
     const appCtx = useAppContext();
     const [hidden, setHidden] = useState(true);
 
-    function computeTrajectoryEnabledMap(modelPredictions: typeof appCtx.modelPredictions) {
-        const map: Record<number, boolean> = {};
-
-        Object.values(modelPredictions).forEach(predictions => {
-            predictions.forEach(p => {
-                if (p.enabled) {
-                    map[p.trajectoryId] = true;
-                } else if (!(p.trajectoryId in map)) {
-                    map[p.trajectoryId] = false;
-                }
-            });
-        });
-
-        return map;
-    }
-
-    function areAllPredictionsEnabled(modelPredictions: typeof appCtx.modelPredictions) {
-        return Object.values(modelPredictions).every(predictions =>
-            predictions.every(p => p.enabled)
+    function syncLabelsWithPredictions(
+        predictions: typeof appCtx.modelPredictions, 
+        setLabels: typeof appCtx.setLabels
+    ) {
+        const allPredictions = Object.values(predictions).flat();
+        const enabledIds = new Set(
+            allPredictions.filter(p => p.enabled).map(p => p.trajectoryId)
         );
+        const allEnabled = allPredictions.every(p => p.enabled);
+        setLabels(prevLabels => {
+            const updated: typeof prevLabels = {};
+            for (const [key, labels] of Object.entries(prevLabels)) {
+                updated[key] = labels.map(l => ({
+                    ...l,
+                    enabled: allEnabled || enabledIds.has(l.trajectoryId)
+                }));
+            }
+            return updated;
+        });
     }
 
-    function handleTogglePrediction(enabled: boolean, modelName: string, trajectoryId: number) {
+    function handleTogglePrediction(enabled: boolean, modelName: string, trajectoryId?: number) {
         appCtx.setModelPredictions(prev => {
-            const updatedPredictions = {
+            const updated = {
                 ...prev,
-                [modelName]: prev[modelName].map(p =>
-                    p.trajectoryId === trajectoryId
+                [modelName]: prev[modelName].map(p => 
+                    (trajectoryId === undefined || p.trajectoryId === trajectoryId)
                         ? { ...p, enabled }
                         : p
                 )
             };
 
-            const enabledMap = computeTrajectoryEnabledMap(updatedPredictions);
-            const allEnabled = areAllPredictionsEnabled(updatedPredictions);
-
-            appCtx.setLabels(prevLabels => {
-                const updated: typeof prevLabels = {};
-
-                for (const key in prevLabels) {
-                    updated[key] = prevLabels[key].map(label => ({
-                        ...label,
-                        enabled: allEnabled
-                            ? true
-                            : !!enabledMap[label.trajectoryId]
-                    }));
-                }
-
-                return updated;
-            });
-
-            return updatedPredictions;
+            syncLabelsWithPredictions(updated, appCtx.setLabels);
+            return updated;
         });
     }
 
-    function handleToggleAllPredictions(enabled: boolean, modelName: string) {
-        appCtx.setModelPredictions(prev => {
-            const updatedPredictions = {
-                ...prev,
-                [modelName]: prev[modelName].map(p => ({ ...p, enabled }))
-            };
+    const handleToggleAllPredictions = (enabled: boolean, modelName: string) => 
+        handleTogglePrediction(enabled, modelName);
 
-            const enabledMap = computeTrajectoryEnabledMap(updatedPredictions);
-            const allEnabled = areAllPredictionsEnabled(updatedPredictions);
-
-            appCtx.setLabels(prevLabels => {
-                const updated: typeof prevLabels = {};
-
-                for (const key in prevLabels) {
-                    updated[key] = prevLabels[key].map(label => ({
-                        ...label,
-                        enabled: allEnabled
-                            ? true 
-                            : !!enabledMap[label.trajectoryId]
-                    }));
-                }
-
-                return updated;
-            });
-
-            return updatedPredictions;
-        });
-    }
     return (
         <div className="absolute top-5 right-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm">
             {/* Collapsed */}
