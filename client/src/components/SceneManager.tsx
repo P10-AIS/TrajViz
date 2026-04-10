@@ -75,8 +75,6 @@ export default function SceneManager() {
                             {/* Detailed Error List: Only render if not successful and status exists */}
                             {!restoreStatus.success && (
                                 <div className="flex flex-col gap-2 border-t border-amber-200 pt-2 text-[11px] leading-tight">
-                                    
-                                    {/* 1. Missing Top-Level Keys */}
                                     {restoreStatus.missingKeys.length > 0 && (
                                         <div>
                                             <span className="font-bold uppercase tracking-wider text-[9px] block mb-1 opacity-70">
@@ -92,7 +90,6 @@ export default function SceneManager() {
                                         </div>
                                     )}
 
-                                    {/* 2. Missing Nested Records */}
                                     {Object.entries(restoreStatus.missingRecords).map(([category, items]) => (
                                         <div key={category} className="bg-white/40 p-1.5 rounded border border-amber-100">
                                             <span className="font-bold uppercase tracking-wider text-[9px] block mb-1 text-amber-600">
