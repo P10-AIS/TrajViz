@@ -98,8 +98,9 @@ export const useSnapshotManager = () => {
 
     const restoreSnapshot = (snapshot: Snapshot) => {
         const { appData } = snapshot;
+        const missingKeys: string[] = [];
+        const missingRecords: Record<string, string[]> = {};
 
-        // 1. Hardcode and filter the boolean settings
         const simpleKeys = [
             "eezDKOutlineVisible",
             "eezUSOutlineVisible",
@@ -117,42 +118,62 @@ export const useSnapshotManager = () => {
         ] as const;
 
         simpleKeys.forEach((key) => {
-            if (key in appContext && appData && key in appData) {
+            const existsInSnapshot = appData && key in appData;
+            const existsInContext = key in appContext;
+
+            if (existsInSnapshot && existsInContext) {
                 const setterName = `set${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof typeof appContext;
                 const setter = appContext[setterName];
                 if (typeof setter === 'function') {
                     (setter as Function)(appData[key]);
                 }
+            } else {
+                missingKeys.push(key);
             }
         });
 
         const filterAndSet = (
             snapshotRecord: Record<string, any> | undefined, 
             contextRecord: Record<string, any> | undefined, 
-            setterName: keyof typeof appContext
+            setterName: keyof typeof appContext,
+            recordLabel: string 
         ) => {
             const setter = appContext[setterName];
-            if (!snapshotRecord || !contextRecord || typeof setter !== 'function') return;
+            if (!snapshotRecord || !contextRecord || typeof setter !== 'function') {
+                missingKeys.push(recordLabel);
+                return;
+            }
 
             const filteredRecord: Record<string, any> = {};
-            for (const [key, value] of Object.entries(snapshotRecord)) {
+            const missingFromThisRecord: string[] = [];
+
+            for (const key of Object.keys(snapshotRecord)) {
                 if (key in contextRecord) {
-                    filteredRecord[key] = value;
+                    filteredRecord[key] = snapshotRecord[key];
+                } else {
+                    missingFromThisRecord.push(key);
                 }
             }
+
+            if (missingFromThisRecord.length > 0) {
+                missingRecords[recordLabel] = missingFromThisRecord;
+            }
+
             (setter as Function)(filteredRecord);
         };
 
-        filterAndSet(appData?.imageOpacities, appContext.imageOverlays, 'setImageOpacities');
-        filterAndSet(appData?.showImageOverlay, appContext.imageOverlays, 'setShowImageOverlay');
-        filterAndSet(appData?.showLabels, appContext.labels, 'setShowLabels');
-        filterAndSet(appData?.showModelPredictions, appContext.modelPredictions, 'setShowModelPredictions');
+        filterAndSet(appData?.imageOpacities, appContext.imageOverlays, 'setImageOpacities', 'imageOpacities');
+        filterAndSet(appData?.showImageOverlay, appContext.imageOverlays, 'setShowImageOverlay', 'showImageOverlay');
+        filterAndSet(appData?.showLabels, appContext.labels, 'setShowLabels', 'showLabels');
+        filterAndSet(appData?.showModelPredictions, appContext.modelPredictions, 'setShowModelPredictions', 'showModelPredictions');
 
         const restoredInView: Record<string, Set<number>> = {};
         if (snapshot.inViewData) {
             for (const [key, arr] of Object.entries(snapshot.inViewData)) {
                 restoredInView[key] = new Set(arr);
             }
+        } else {
+            missingKeys.push('inViewData');
         }
 
         if (typeof appContext.setModelPredictions === 'function') {
@@ -180,6 +201,12 @@ export const useSnapshotManager = () => {
         if (inViewContext && typeof inViewContext.setModelPredictionsInView === 'function') {
             inViewContext.setModelPredictionsInView(restoredInView);
         }
+
+        return {
+            success: missingKeys.length === 0 && Object.keys(missingRecords).length === 0,
+            missingKeys,
+            missingRecords
+        };
     };
     const deleteSnapshot = (id: string) => {
         setSnapshots(prev => prev.filter(s => s.id !== id));

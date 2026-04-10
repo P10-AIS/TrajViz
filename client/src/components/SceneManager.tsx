@@ -1,13 +1,24 @@
-import { useState } from "react";
-import { IoIosBookmark, IoMdClose, IoIosSave, IoIosTrash, IoIosRefresh, IoIosWarning } from "react-icons/io";
-import { useSnapshotManager } from "../hooks/SceneHook";
-import { useAppContext } from "../contexts/AppContext";
+import { useState, useEffect } from "react";
+import { IoIosBookmark, IoMdClose, IoIosSave, IoIosTrash, IoIosRefresh, IoIosWarning, IoIosCheckmarkCircle } from "react-icons/io";
+import { useSnapshotManager, type Snapshot } from "../hooks/SceneHook";
+
+interface RestoreFeedback {
+    success: boolean;
+    missingKeys: string[];
+    missingRecords: Record<string, string[]>;
+}
 
 export default function SceneManager() {
     const [hidden, setHidden] = useState(true);
     const [snapshotName, setSnapshotName] = useState("");
+    const [restoreStatus, setRestoreStatus] = useState<RestoreFeedback | null>(null);
     const { snapshots, takeSnapshot, restoreSnapshot, deleteSnapshot, missingApplicableKeys } = useSnapshotManager();
-    const curCtx = useAppContext();
+    useEffect(() => {
+        if (restoreStatus) {
+            const timer = setTimeout(() => setRestoreStatus(null), 10000);
+            return () => clearTimeout(timer);
+        }
+    }, [restoreStatus]);
 
     const handleSave = () => {
         if (!snapshotName.trim()) return;
@@ -15,8 +26,13 @@ export default function SceneManager() {
         setSnapshotName(""); 
     };
 
+    const handleRestore = (snapshot: Snapshot) => {
+        const result = restoreSnapshot(snapshot);
+        setRestoreStatus(result);
+    };
+
     return (
-        <div className="bg-white rounded p-4 shadow-lg overflow-auto text-slate-600 text-sm max-w-sm">
+        <div className="bg-white rounded p-4 shadow-lg overflow-auto text-slate-600 text-sm max-w-sm relative">
             {hidden && (
                 <div className="flex">
                     <button onClick={() => setHidden(false)} title="Open Scene Manager">
@@ -39,6 +55,62 @@ export default function SceneManager() {
                             <IoMdClose size={24} />
                         </button>
                     </div>
+
+                    {/* Wrap the entire block in a null check */}
+                    {restoreStatus && (
+                        <div className={`p-3 rounded border flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                            restoreStatus.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700'
+                        }`}>
+                            {/* Header */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 font-bold">
+                                    {restoreStatus.success ? <IoIosCheckmarkCircle /> : <IoIosWarning />}
+                                    {restoreStatus.success ? "Scene Restored" : "Partial Restore"}
+                                </div>
+                                <button onClick={() => setRestoreStatus(null)} className="hover:opacity-70">
+                                    <IoMdClose size={16} />
+                                </button>
+                            </div>
+
+                            {/* Detailed Error List: Only render if not successful and status exists */}
+                            {!restoreStatus.success && (
+                                <div className="flex flex-col gap-2 border-t border-amber-200 pt-2 text-[11px] leading-tight">
+                                    
+                                    {/* 1. Missing Top-Level Keys */}
+                                    {restoreStatus.missingKeys.length > 0 && (
+                                        <div>
+                                            <span className="font-bold uppercase tracking-wider text-[9px] block mb-1 opacity-70">
+                                                Missing Properties:
+                                            </span>
+                                            <div className="flex flex-wrap gap-1">
+                                                {restoreStatus.missingKeys.map((key) => (
+                                                    <span key={key} className="bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200 font-mono">
+                                                        {key}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 2. Missing Nested Records */}
+                                    {Object.entries(restoreStatus.missingRecords).map(([category, items]) => (
+                                        <div key={category} className="bg-white/40 p-1.5 rounded border border-amber-100">
+                                            <span className="font-bold uppercase tracking-wider text-[9px] block mb-1 text-amber-600">
+                                                {category} <span className="font-normal opacity-70">({items.length} missing)</span>
+                                            </span>
+                                            <div className="grid grid-cols-1 gap-0.5 italic text-slate-500">
+                                                {items.map((item) => (
+                                                    <div key={item} className="truncate" title={item}>
+                                                        • {item}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Snapshot Creation */}
                     <div className="flex gap-2">
@@ -92,7 +164,7 @@ export default function SceneManager() {
                                     
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button 
-                                            onClick={() => restoreSnapshot(snapshot)}
+                                            onClick={() => handleRestore(snapshot)}
                                             className="p-1.5 text-blue-600 hover:bg-blue-200 rounded"
                                             title={isIncomplete ? "Restore (Partial data only)" : "Restore Scene"}
                                         >
