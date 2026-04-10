@@ -56,7 +56,7 @@ export const drawTrajectories = (
   trajectories
     .slice(0, Math.ceil(trajectories.length * density))
     .forEach((t) => {
-      if (!t.enabled || t.level[trajZoom].points.length === 0) return;
+      if (!t.enabled || !t.level[trajZoom] || t.level[trajZoom].points.length === 0) return;
       if (!isBoundingBoxInView(t.level[trajZoom].boundingBox, viewBox)) return;
 
       const pts = t.level[trajZoom].points.map((p) => {
@@ -148,7 +148,7 @@ export function drawPredictions(
   const idsInView = new Set<number>();
 
   predictions.slice(0, Math.ceil(predictions.length * density)).forEach((p) => {
-    if (p.level[trajZoom].points.length === 0) return;
+    if (!p.level[trajZoom] || p.level[trajZoom].points.length === 0) return;
     if (!isBoundingBoxInView(p.level[trajZoom].boundingBox, viewBox)) return;
 
     idsInView.add(p.trajectoryId);

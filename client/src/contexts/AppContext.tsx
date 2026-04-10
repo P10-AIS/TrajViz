@@ -70,8 +70,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [showModelPredictions, setShowModelPredictions] = useState<Record<string, boolean>>({});
     const [showLabels, setShowLabels] = useState<Record<string, boolean>>({});
     const [enableShipSizeGuide, setEnableShipSizeGuide] = useState(false);
-    const [showTrajectoryDots, setShowTrajectoryDots] = useState(true);
-    const [showPredictionDots, setShowPredictionDots] = useState(true);
+    const [showTrajectoryDots, setShowTrajectoryDots] = useState(false);
+    const [showPredictionDots, setShowPredictionDots] = useState(false);
     const [trajectoryDensity, setTrajectoryDensity] = useState(0.1);
     const [imageOverlays, setImageOverlays] = useState<Record<string, GeoImage>>({});
     const [showImageOverlay, setShowImageOverlay] = useState<Record<string, boolean>>({});

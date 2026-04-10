@@ -7,6 +7,7 @@ export default function MapController() {
   const map = useMapEvents({
     zoomend: () => {
       setZoom(map.getZoom());
+      console.log("Zoom level changed:", map.getZoom());
     },
     moveend: () => {
       const newCenter = map.getCenter();
