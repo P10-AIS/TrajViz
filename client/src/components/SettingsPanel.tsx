@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppContext } from "../contexts/AppContext";
 import { IoMdCog, IoMdClose } from "react-icons/io";
 import { useInViewContext } from "../contexts/InViewContext";
@@ -223,7 +223,7 @@ function SettingsPanel() {
 
                         <div>Toggle Labels:</div>
                         <div className="p-2 bg-gray-200 rounded">
-                            {Object.keys(ctx.showLabels).map((labelName) => (
+                            {Object.keys(ctx.labels).map((labelName) => (
                                 <div key={labelName} className="flex flex-row items-center space-x-3">
                                     <div className="truncate">{labelName}</div>
                                     <input
@@ -261,7 +261,7 @@ function SettingsPanel() {
                         {/* show prediction toggles */}
                         <div>Toggle Model Predictions:</div>
                         <div className="p-2 bg-gray-200 rounded">
-                            {Object.keys(ctx.showModelPredictions).map((modelName) => (
+                            {Object.keys(ctx.modelPredictions).map((modelName) => (
                                 <div key={modelName} className="flex flex-row items-center space-x-3">
                                     <div className="truncate">{modelName}</div>
                                     <input
@@ -298,18 +298,16 @@ function SettingsPanel() {
                             {!imageOverlayCollapsed && (
                                 <div className="p-4 pt-0 space-y-4">
                                     {Object.keys(ctx.imageOverlays).map((name) => {
-                                        // Regex to extract the base name and the PROJ value
                                         const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (match, base, proj) => {
                                             return `${base}_${proj.replace('.', ':')}`;
                                         });
 
                                         if (!name.includes(`PROJ_${ctx.projection.replace(':', '.')}`)) {
-                                            return null; // Skip overlays that don't match the current projection
+                                            return null;
                                         }
 
                                         return (
                                             <div key={name} className="flex flex-col p-2 bg-white rounded border border-gray-200 shadow-sm transition-all hover:border-blue-400">
-                                                {/* Top Row: Name and Checkbox */}
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span 
                                                         className="text-sm font-medium text-gray-700 truncate cursor-help"
@@ -328,7 +326,6 @@ function SettingsPanel() {
                                                     />
                                                 </div>
 
-                                                {/* Bottom Row: Full-width Slider */}
                                                 <div className="flex items-center space-x-2">
                                                     <span className="text-xs text-gray-400">Opacity</span>
                                                     <input

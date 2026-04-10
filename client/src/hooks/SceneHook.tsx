@@ -134,34 +134,48 @@ export const useSnapshotManager = () => {
         setSnapshots(prev => prev.filter(s => s.id !== id));
     };
 
-    const missingApplicableKeys = (curCtx: AppContextType, snapshotData: AppSnapshot): string[] => {
-        const recordFieldsToCheck: (keyof AppSnapshot)[] = [
-            "showModelPredictions",
-            "showLabels",
-            "showImageOverlay",
-            "imageOpacities"
+    const missingApplicableKeys = (snapshotData: AppSnapshot): string[] => {
+        const missingKeys: Set<string> = new Set();
+        const boolKeys: (keyof AppSnapshot)[] = [
+            "eezDKOutlineVisible",
+            "eezUSOutlineVisible",
+            "fullTrajectoryFidelity",
+            "fullEezFidelity",
+            "showMapTiles",
+            "fullPredictionFidelity",
+            "enableShipSizeGuide",
+            "showTrajectoryDots",
+            "showPredictionDots",
         ];
-
-        const missingKeys: string[] = [];
-
-        recordFieldsToCheck.forEach((field) => {
-            const snapshotRecord = snapshotData[field];
-            const currentRecord = curCtx[field];
-
-            // Ensure both fields exist and are objects/records before comparing
-            if (snapshotRecord && typeof snapshotRecord === 'object' && currentRecord) {
-                const snapshotEntryKeys = Object.keys(snapshotRecord);
-                const currentEntryKeys = new Set(Object.keys(currentRecord));
-
-                snapshotEntryKeys.forEach((key) => {
-                    // If the key from the snapshot isn't in the current context, it's "missing"
-                    if (!currentEntryKeys.has(key)) {
-                        missingKeys.push(key);
-                    }
-                });
+        for (const key of boolKeys) {
+            if (!(key in appContext)) {
+                missingKeys.add(key);
             }
-        });
-        return missingKeys;
+        }
+
+        for (const key of Object.keys(snapshotData.imageOpacities || {})) {
+            if (!(key in appContext.imageOverlays)) {
+                missingKeys.add(`image overlay.${key}`);
+            }
+        }
+        for (const key of Object.keys(snapshotData.showImageOverlay || {})) {
+            if (!(key in appContext.imageOverlays)) {
+                missingKeys.add(`image overlay.${key}`);
+            }
+        }
+        for (const key of Object.keys(snapshotData.showLabels || {})) {
+            if (!(key in appContext.labels)) {
+                missingKeys.add(`label ${key}`);
+            }
+        }
+
+        for (const key of Object.keys(snapshotData.showModelPredictions || {})) {
+            if (!(key in appContext.modelPredictions)) {
+                missingKeys.add(`model prediction ${key}`);
+            }
+        }
+
+        return Array.from(missingKeys);
     };
 
     return { snapshots, takeSnapshot, restoreSnapshot, deleteSnapshot, missingApplicableKeys };
