@@ -1,3 +1,5 @@
+import type { Projection } from "./projection";
+
 export type DrawConfig = {
     colors: {
         label: string;
@@ -10,4 +12,6 @@ export type DrawConfig = {
     radiusScale: number;
     lineWidthScale: number;
     dashPattern: number[];
+    numZoomLevels: number;
+    trajectorySimplificationThresholds: Record<Projection, number>
 }

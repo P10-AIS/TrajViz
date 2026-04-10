@@ -47,27 +47,23 @@ export function prepareEezPolygons(parsedPolygons: ParsedPolygon[]): Polygon[] {
 
     return polygons;
 }
-
-export function preparePoints(parsedPoints: ParsedTrajectory[]): Trajectory[] {
-    const minZoom = 3;
-    const maxZoom = 9;
-
+export function preparePoints(parsedPoints: ParsedTrajectory[], numZoomLevels: number): Trajectory[] {
     const minStep = 1;
     const maxStep = 600;
 
-    const points = parsedPoints.map((pred) => {
+    const points = parsedPoints.map((traj) => {
         const zooms: ZoomLevels<{
-                padding: boolean[];
-                points: Point[];
-                boundingBox: Bound;
-            }> = []
+            padding: boolean[];
+            points: Point[];
+            boundingBox: Bound;
+        }> = [];
 
-        for (let zoom = 1; zoom <= 18; zoom++) {
-            const step = maxStep - ((zoom - minZoom) / (maxZoom - minZoom)) * (maxStep - minStep);
+        for (let zoom = 0; zoom < numZoomLevels; zoom++) {
+            const step = maxStep - (zoom / (numZoomLevels - 1)) * (maxStep - minStep);
             const stepInt = Math.max(1, Math.round(step));
 
-            const simplifiedPadding = simplify(pred.padding, stepInt);
-            const simplifiedPreds = simplify(pred.points, stepInt);
+            const simplifiedPadding = simplify(traj.padding, stepInt);
+            const simplifiedPreds = simplify(traj.points, stepInt);
             const bb = getBoundingBox(simplifiedPreds);
 
             zooms.push({
@@ -76,12 +72,14 @@ export function preparePoints(parsedPoints: ParsedTrajectory[]): Trajectory[] {
                 boundingBox: bb,
             });
         }
+        
         return {
-            trajectoryId: pred.trajectoryId,
-            level: zooms,
+            trajectoryId: traj.trajectoryId,
+            level: zooms, //level 0 is the most simplified
             enabled: true,
         };
     });
+    
     return points;
 }
 

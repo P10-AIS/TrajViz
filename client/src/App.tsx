@@ -71,7 +71,7 @@ function App() {
 
             {Object.entries(appCtx.labels).map(([labelName, trajectories]) => (
               appCtx.showLabels[labelName] &&
-              <CanvasLayer key={labelName} zIndex={4} drawMethod={(info) => drawTrajectories(trajectories, appCtx.trajectoryDensity, appCtx.fullTrajectoryFidelity, appCtx.showTrajectoryDots, info, appCtx.drawConfig)} />
+              <CanvasLayer key={labelName} zIndex={4} drawMethod={(info) => drawTrajectories(trajectories, appCtx.trajectoryDensity, appCtx.fullTrajectoryFidelity, appCtx.showTrajectoryDots, appCtx.projection, info, appCtx.drawConfig)} />
             ))}
 
             {Object.entries(appCtx.modelPredictions).map(([modelName, predictions]) => (

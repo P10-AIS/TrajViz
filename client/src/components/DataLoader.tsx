@@ -87,7 +87,7 @@ function DataLoader({ children }: { children: JSX.Element }) {
                 for (const model in predictions) {
                     const data = predictions[model];
                     const parsed = parsePoints(data);
-                    const zoomed = preparePoints(parsed);
+                    const zoomed = preparePoints(parsed, ctx.drawConfig.numZoomLevels);
                     
                     ctx.setModelPredictions((prev) => ({
                         ...prev,
@@ -113,7 +113,7 @@ function DataLoader({ children }: { children: JSX.Element }) {
                 for (const dataset in labels) {
                     const data = labels[dataset];
                     const parsed = parsePoints(data);
-                    const zoomed = preparePoints(parsed);
+                    const zoomed = preparePoints(parsed, ctx.drawConfig.numZoomLevels);
                     
                     ctx.setLabels((prev) => ({
                         ...prev,

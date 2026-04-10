@@ -36,7 +36,7 @@ export default function SceneManager() {
             {hidden && (
                 <div className="flex">
                     <button onClick={() => setHidden(false)} title="Open Scene Manager">
-                        <IoIosBookmark size={24} className="text-blue-600 hover:scale-110 transition-transform" />
+                        <IoIosBookmark size={24} className="hover:scale-110 transition-transform" />
                     </button>
                 </div>
             )}

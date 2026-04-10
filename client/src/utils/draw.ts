@@ -4,6 +4,7 @@ import type { DrawConfig } from "../types/DrawConfig";
 import type { GeoImage } from "../types/GeoImage";
 import type { Polygon } from "../types/Polygon";
 import type { Trajectory } from "../types/Prediction";
+import { Projection } from "../types/projection";
 
 // ------------------- Utility Functions -------------------
 function isBoundingBoxInView(bbox: Bound, view: Bound): boolean {
@@ -34,6 +35,7 @@ export const drawTrajectories = (
   density: number,
   fullTrajectoryFidelity: boolean,
   showDots: boolean,
+  projection: Projection,
   info: DrawInfo,
   config: DrawConfig,
 ) => {
@@ -49,8 +51,23 @@ export const drawTrajectories = (
     maxLng: bounds.getEast(),
   };
 
-  const zoom = map.getZoom();
-  const trajZoom = fullTrajectoryFidelity ? 17 : zoom;
+
+
+  const zoom = Math.floor(map.getZoom()); 
+  const threshold = config.trajectorySimplificationThresholds[projection] || 10;
+  const maxFidelityIndex = config.numZoomLevels - 1; 
+
+  const zoomOutDifference = threshold - zoom;
+  let trajZoom;
+  if (zoomOutDifference <= 0) {
+    trajZoom = maxFidelityIndex; 
+  } else {
+    trajZoom = Math.max(0, maxFidelityIndex - zoomOutDifference);
+  }
+
+  if (fullTrajectoryFidelity) {
+    trajZoom = config.numZoomLevels - 1; //use the least simplified level
+  }
   const markerSize = config.radiusScale * 1.5;
 
   trajectories
