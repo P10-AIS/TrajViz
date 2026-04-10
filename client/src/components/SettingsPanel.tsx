@@ -65,7 +65,7 @@ function SettingsPanel() {
 
 
     return (
-        <div className="absolute top-5 left-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm">
+        <div className="absolute top-5 left-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm max-h-[95vh]">
             {hidden && (
                 <div className="flex ">
                     <button className="hover:rotate-90 hover:scale-110 transition-transform hover:cursor-pointer" onClick={() => setHidden(false)}>
