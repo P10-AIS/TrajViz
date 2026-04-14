@@ -7,9 +7,9 @@ import { useAppContext } from './contexts/AppContext';
 import DataLoader from './components/DataLoader';
 import TileLayer3034 from './components/TileLayer3034';
 import Map3857 from './components/Map3857';
-import Map5070 from './components/Map5070';
+import Map32617 from './components/Map32617';
 import TileLayer3857 from './components/TileLayer3857';
-import TileLayer5070 from './components/TileLayer5070';
+import TileLayer32617 from './components/TileLayer32617';
 import { useInViewContext } from './contexts/InViewContext';
 import { Projection } from './types/projection';
 import ViewPanel from './components/ViewPanel';
@@ -24,8 +24,8 @@ function App() {
         return [Map3034, TileLayer3034];
       case Projection.EPSG3857:
         return [Map3857, TileLayer3857];
-      case Projection.EPSG5070:
-        return [Map5070, TileLayer5070];
+      case Projection.EPSG32617:
+        return [Map32617, TileLayer32617];
       default:
         return [Map3857, TileLayer3857];
     }

@@ -14,9 +14,9 @@ export const CRS_3034 = new L.Proj.CRS(
     }
 );
 
-export const CRS_5070 = new L.Proj.CRS(
-    "EPSG:5070",
-    "+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
+export const CRS_32617 = new L.Proj.CRS(
+    "EPSG:32617",
+    "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs +type=crs"
     ,
     {
         resolutions: [
