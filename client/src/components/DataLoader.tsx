@@ -12,24 +12,22 @@ async function fetchMapImage(imageName: string): Promise<GeoImage> {
     const response = await fetch(`/api/image/${imageName}`);
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
 
-    const data = await response.json();
+    const metadataRaw = response.headers.get("x-image-metadata");
+    const data = JSON.parse(metadataRaw || "{}");
+
+    const blob = await response.blob();
+    const objectURL = URL.createObjectURL(blob);
 
     const img = new Image();
-    img.src = `data:${data.mimeType};base64,${data.data}`;
+    img.src = objectURL;
 
     return new Promise((resolve, reject) => {
         img.onload = () => {
             resolve({
                 img,
                 area: {
-                    topRight: {
-                        lat: data.area.top_right.lat,
-                        lng: data.area.top_right.lon,
-                    },
-                    bottomLeft: {
-                        lat: data.area.bottom_left.lat,
-                        lng: data.area.bottom_left.lon,
-                    },
+                    topRight: { lat: data.area.top_right.lat, lng: data.area.top_right.lon },
+                    bottomLeft: { lat: data.area.bottom_left.lat, lng: data.area.bottom_left.lon },
                 },
                 projection: data.projection,
             });

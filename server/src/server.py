@@ -1,3 +1,4 @@
+from fastapi.responses import FileResponse
 import os
 import httpx
 from fastapi import FastAPI, HTTPException, Request
@@ -8,6 +9,7 @@ import re
 from .state_loader import load_predictions, load_labels
 import base64
 import mimetypes
+import json
 
 load_dotenv()
 predictions_cache = {}
@@ -90,59 +92,31 @@ def get_images():
 
 @app.get("/image/{filename}")
 def get_heatmap(filename: str):
-    """
-    Reads the image file, extracts coordinates and projection from the filename,
-    and returns a JSON payload matching the legacy JS server format.
-    """
     path = os.path.join(IMAGES_FOLDER, filename)
     
     if not (os.path.exists(path) and os.path.isfile(path)):
         raise HTTPException(status_code=404, detail="Heatmap not found.")
 
-    # Updated pattern to include the PROJ capture group
     pattern = r"BL_(?P<bl_lat>[\d.-]+)_(?P<bl_lon>[\d.-]+)_TR_(?P<tr_lat>[\d.-]+)_(?P<tr_lon>[\d.-]+)_PROJ_(?P<proj_str>[\w.]+)"
     match = re.search(pattern, filename)
     
     if not match:
-        raise HTTPException(
-            status_code=400, 
-            detail="Filename does not contain valid coordinate or projection data."
-        )
+        raise HTTPException(status_code=400, detail="Invalid filename format.")
     
     coords = match.groupdict()
     
-    raw_projection = coords["proj_str"]
-    formatted_projection = raw_projection.replace(".", ":")
-
-    area_obj = {
-        "top_right": {
-            "lat": float(coords["tr_lat"]),
-            "lon": float(coords["tr_lon"])
-        },
-        "bottom_left": {
-            "lat": float(coords["bl_lat"]),
-            "lon": float(coords["bl_lon"])
+    # We store the metadata in a custom header so we can send the file as binary
+    metadata = {
+        "projection": coords["proj_str"].replace(".", ":"),
+        "area": {
+            "top_right": {"lat": float(coords["tr_lat"]), "lon": float(coords["tr_lon"])},
+            "bottom_left": {"lat": float(coords["bl_lat"]), "lon": float(coords["bl_lon"])}
         }
     }
 
-    try:
-        with open(path, "rb") as f:
-            img_bytes = f.read()
-        base64_data = base64.b64encode(img_bytes).decode('utf-8')
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to read image file: {str(e)}")
-
-    mime_type, _ = mimetypes.guess_type(path)
-    if not mime_type:
-        mime_type = "image/png"
-
-    timestamp_ms = int(os.path.getmtime(path) * 1000)
-
-    return {
-        "name": filename,
-        "projection": formatted_projection,
-        "area": area_obj,
-        "mimeType": mime_type,
-        "data": base64_data,
-        "timestamp": timestamp_ms
-    }
+    # Return the file directly. This is MUCH faster and uses less RAM.
+    return FileResponse(
+        path, 
+        media_type="image/png", 
+        headers={"x-image-metadata": json.dumps(metadata)}
+    )
