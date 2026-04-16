@@ -1,4 +1,4 @@
-import { useAppContext, type AppContextType } from '../contexts/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 import { useInViewContext} from '../contexts/InViewContext';
 import { useLocalStorageState } from '../contexts/LocalStorageState';
 import type { AppSnapshot } from '../types/AppContextSceneState';

@@ -2,7 +2,6 @@ import { createContext, useContext, useState, type JSX } from 'react';
 import type { Polygon } from '../types/Polygon';
 import type { GeoImage } from '../types/GeoImage';
 import type { Trajectory } from '../types/Prediction';
-import { useLocalStorageState } from './LocalStorageState';
 import type { DrawConfig } from '../types/DrawConfig';
 import { Projection } from '../types/projection';
 import type { ImageOpacities } from '../types/Opacity';
@@ -101,7 +100,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         trajectorySimplificationThresholds: {
             [Projection.EPSG3034]: 7, //zoomlevel where we begin to simplify
             [Projection.EPSG3857]: 11,
-            [Projection.EPSG5070]: 10,
+            [Projection.EPSG32617]: 10,
         }
     });
 

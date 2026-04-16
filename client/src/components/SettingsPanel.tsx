@@ -298,7 +298,7 @@ function SettingsPanel() {
                             {!imageOverlayCollapsed && (
                                 <div className="p-4 pt-0 space-y-4">
                                     {Object.keys(ctx.imageOverlays).map((name) => {
-                                        const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (match, base, proj) => {
+                                        const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (_, base, proj) => {
                                             return `${base}_${proj.replace('.', ':')}`;
                                         });
 
