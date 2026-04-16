@@ -23,9 +23,11 @@
 			]
 		}
 	},
+	"postCreateCommand": "pip install -r server/requirements.txt && cd client && npm ci",
+	"remoteUser": "root",
 	"mounts": [
-		"type=bind,source=/mnt/dataimputationgroup/Crate/Data,target=${containerWorkspaceFolder}/Data",
-		"type=bind,source=/mnt/dataimputationgroup/TRAIT/Predictions,target=${containerWorkspaceFolder}/Predictions"
+		"type=bind,source=/mnt/dataimputationgroup/Crate/Data,target=${containerWorkspaceFolder}/server/Data",
+		"type=bind,source=/mnt/dataimputationgroup/TRAIT/Predictions,target=${containerWorkspaceFolder}/server/Predictions"
 	],
 	"shutdownAction": "none"
 }

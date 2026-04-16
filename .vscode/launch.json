@@ -7,11 +7,11 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "server.src.server:app",
+                "src.server:app",
                 "--port",
                 "4000"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/server",
             "jinja": true
         }
     ]

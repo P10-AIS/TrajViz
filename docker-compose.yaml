@@ -17,5 +17,5 @@ services:
     env_file:
       - ./server/src/.env
     volumes:
-      - /mnt/dataimputationgroup/Crate/Data:/app/Data
-      - /mnt/dataimputationgroup/TRAIT/Predictions:/app/Predictions
+      - /mnt/dataimputationgroup/Crate/Data:/app/server/Data
+      - /mnt/dataimputationgroup/TRAIT/Predictions:/app/server/Predictions
