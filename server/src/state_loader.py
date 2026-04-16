@@ -3,16 +3,46 @@ import numpy as np
 import pickle
 
 def load_predictions(predictions_cache: dict):
-    if os.path.exists("Predictions"):
-        for filename in os.listdir("Predictions"):
-            path = os.path.join("Predictions", filename)
+    directory = "Predictions"
+    
+    if not os.path.exists(directory):
+        return
+
+    for filename in os.listdir(directory):
+        if not filename.endswith('.npz'):
+            continue
+            
+        path = os.path.join(directory, filename)
+        
+        try:
             with np.load(path, allow_pickle=True) as data:
-                predictions: np.ndarray = data['predictions']
-                predictions_obj = predictions.astype(object)
-                predictions_obj[np.isnan(predictions)] = None
-                predictions_cache[filename] = {
-                    "points": predictions_obj.tolist()
-                }
+                lats = data.get('lats')
+                lons = data.get('lons')
+                timestamps = data.get('timestamps')
+
+                if lats is None or lons is None or timestamps is None:
+                    continue
+
+                # 1. Stack arrays horizontally to create [lat, lon, timestamp] rows
+                # column_stack creates a 2D array: [[lat1, lon1, ts1], [lat2, lon2, ts2]]
+                stacked = np.stack((lats, lons, timestamps), axis=2)
+                
+                # 2. Handle NaNs by converting to a list and replacing them
+                # Converting to a list first makes it easier to replace NaNs with None 
+                # for JSON-like structures.
+                points = stacked.tolist()
+                
+                # Efficiently replace any NaN values with None (JSON null)
+                # We use a list comprehension for a clean, Pythonic conversion
+                clean_points = [
+                    [None if (isinstance(val, float) and np.isnan(val)) else val for val in point]
+                    for point in points
+                ]
+
+                predictions_cache[filename] = {"points": clean_points}
+                
+        except Exception as e:
+            print(f"Error loading {filename}: {e}")
 
     
 def load_labels(labels_cache: dict):
