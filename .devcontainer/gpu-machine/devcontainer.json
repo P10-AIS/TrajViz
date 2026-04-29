@@ -1,0 +1,33 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+	"name": "Crowsnest Dev Container",
+	"workspaceFolder": "/workspaces/Crowsnest",
+	"build": {
+		// Path is relative to the devcontainer.json file.
+		"dockerfile": "../Dockerfile",
+		"context": "../.."
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "lts"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"bradlc.vscode-tailwindcss",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode"
+			]
+		}
+	},
+	"remoteUser": "root",
+	"mounts": [
+		"type=bind,source=/mnt/dataimputationgroup/Crate/Data,target=${containerWorkspaceFolder}/server/Data",
+		"type=bind,source=/mnt/dataimputationgroup/TRAIT/Predictions,target=${containerWorkspaceFolder}/server/Predictions"
+	],
+	"shutdownAction": "none"
+}
