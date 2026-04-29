@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 
 from src.loader import load_all_predictions, load_all_labels
@@ -47,6 +48,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +72,7 @@ def _viewport_params(
     }
 
 
-def _stream_trajectories(store: TrajectoryStore, lat_min, lat_max, lon_min, lon_max, zoom, limit=None):
+def _stream_trajectories(store: TrajectoryStore, lat_min, lat_max, lon_min, lon_max, zoom, limit=None, already_have=None):
     """
     Generator that yields NDJSON lines, one trajectory per line.
 
@@ -89,13 +91,18 @@ def _stream_trajectories(store: TrajectoryStore, lat_min, lat_max, lon_min, lon_
     matching = trajectories_in_viewport(
         store, lat_min, lat_max, lon_min, lon_max)
 
+    if already_have:
+        new_only = [t for i, t in enumerate(matching) if i not in already_have]
+    else:
+        new_only = matching
+
     if limit is not None:
-        matching = matching[:limit]
+        new_only = new_only[:limit]
 
     # Header — tells the frontend total count before data starts arriving
     yield json.dumps({"type": "header", "source": store.name, "total": len(matching)}) + "\n"
 
-    for i, traj in enumerate(matching):
+    for i, traj in enumerate(new_only):
         pts = thin_trajectory(traj.points, zoom)
         if not pts:
             continue
@@ -117,11 +124,13 @@ async def get_predictions(
     lon_max: float = Query(...),
     zoom: int = Query(..., ge=1, le=18),
     limit: int = Query(default=None, ge=1),
+    already_have: str = Query(default=""),
 ):
     """
     Stream trajectories for one model that intersect the given viewport.
     Response is NDJSON (Content-Type: application/x-ndjson).
     """
+    have_set = set(int(i) for i in already_have.split(",") if i)
     store = prediction_stores.get(model_name)
     if store is None:
         raise HTTPException(
@@ -129,7 +138,7 @@ async def get_predictions(
 
     return StreamingResponse(
         _stream_trajectories(store, lat_min, lat_max,
-                             lon_min, lon_max, zoom, limit),
+                             lon_min, lon_max, zoom, limit, have_set),
         media_type="application/x-ndjson",
     )
 
@@ -143,11 +152,13 @@ async def get_labels(
     lon_max: float = Query(...),
     zoom: int = Query(..., ge=1, le=18),
     limit: int = Query(default=None, ge=1),
+    already_have: str = Query(default=""),
 ):
     """
     Stream label trajectories for one dataset that intersect the given viewport.
     Response is NDJSON (Content-Type: application/x-ndjson).
     """
+    have_set = set(int(i) for i in already_have.split(",") if i)
     store = label_stores.get(dataset_name)
     if store is None:
         raise HTTPException(
@@ -155,7 +166,7 @@ async def get_labels(
 
     return StreamingResponse(
         _stream_trajectories(store, lat_min, lat_max,
-                             lon_min, lon_max, zoom, limit),
+                             lon_min, lon_max, zoom, limit, have_set),
         media_type="application/x-ndjson",
     )
 
@@ -164,7 +175,10 @@ async def get_labels(
 async def list_predictions():
     """Lists all available prediction model names and their trajectory counts."""
     return {
-        name: {"count": len(store.trajectories)}
+        name: {
+            "count": len(store.trajectories),
+            "historic_horizon_m": store.historic_horizon_m,
+        }
         for name, store in prediction_stores.items()
     }
 

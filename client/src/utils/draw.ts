@@ -158,15 +158,6 @@ export function drawPredictions(
       ? baseTs + historicHorizonMinutes * 60
       : null;
 
-    // Draw dots
-    if (zoom >= config.dotsZoom && showDots) {
-      ctx.fillStyle = config.colors.prediction;
-      for (const pt of pts) {
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, config.radiusScale, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
 
     // Draw segments, colouring historic vs predicted portions differently
     ctx.lineWidth = config.lineWidthScale;
@@ -182,6 +173,18 @@ export function drawPredictions(
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
       ctx.stroke();
+    }
+
+
+    // Draw dots
+    if (zoom >= config.dotsZoom && showDots) {
+      for (const pt of pts) {
+        ctx.fillStyle = cutoffTs !== null && pt.ts <= cutoffTs
+          ? config.colors.label        // historic — blue
+          : config.colors.prediction;  // predicted — red
+        const s = config.radiusScale * 2;
+        ctx.fillRect(pt.x - s / 2, pt.y - s / 2, s, s);
+      }
     }
   });
 

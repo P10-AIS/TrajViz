@@ -54,16 +54,14 @@ async function streamTrajectories(
     }
 }
 
-// Builds query string including a density-derived limit for one model/dataset.
-// totalCount comes from the /api/predictions or /api/labels list endpoint.
-function buildQuery(vp: Viewport, density: number, totalCount: number): string {
+function buildQuery(vp: Viewport, density: number, totalCount: number, fullFidelity: boolean): string {
     const limit = Math.max(1, Math.ceil(totalCount * density));
     return new URLSearchParams({
         lat_min: String(vp.latMin),
         lat_max: String(vp.latMax),
         lon_min: String(vp.lonMin),
         lon_max: String(vp.lonMax),
-        zoom: String(vp.zoom),
+        zoom: fullFidelity ? "18" : String(vp.zoom),
         limit: String(limit),
     }).toString();
 }
@@ -76,11 +74,10 @@ export function useLoadTrajectories() {
     const {
         setModelPredictions,
         setLabels,
-        setShowModelPredictions,
-        setShowLabels,
         showModelPredictions,
         showLabels,
         trajectoryDensity,
+        fullTrajectoryFidelity,
     } = useAppContext();
 
     const abortRefs = useRef<Map<string, AbortController>>(new Map());
@@ -92,8 +89,8 @@ export function useLoadTrajectories() {
         }
         abortRefs.current.clear();
 
-        // Fetch available model/dataset names + total counts (cheap, browser-cached)
-        // Response shape: { modelName: { count: number }, ... }
+        // Fetch counts — needed to compute per-model limits
+        // Names and toggles are already registered by DataLoader on mount
         let predRes: Record<string, { count: number }> = {};
         let labelRes: Record<string, { count: number }> = {};
 
@@ -107,23 +104,6 @@ export function useLoadTrajectories() {
             return;
         }
 
-        // Register any newly discovered models/datasets as off by default
-        setShowModelPredictions(prev => {
-            const updates: Record<string, boolean> = {};
-            for (const name of Object.keys(predRes)) {
-                if (!(name in prev)) updates[name] = false;
-            }
-            return Object.keys(updates).length ? { ...prev, ...updates } : prev;
-        });
-
-        setShowLabels(prev => {
-            const updates: Record<string, boolean> = {};
-            for (const name of Object.keys(labelRes)) {
-                if (!(name in prev)) updates[name] = false;
-            }
-            return Object.keys(updates).length ? { ...prev, ...updates } : prev;
-        });
-
         // ── Predictions ────────────────────────────────────────────────────
 
         for (const modelName of Object.keys(predRes)) {
@@ -132,15 +112,14 @@ export function useLoadTrajectories() {
             const controller = new AbortController();
             abortRefs.current.set(`pred:${modelName}`, controller);
 
-            // Each model gets its own query with its own count → its own limit
-            const query = buildQuery(viewport, trajectoryDensity, predRes[modelName].count);
-
-            setModelPredictions(prev => ({ ...prev, [modelName]: [] }));
+            const query = buildQuery(viewport, trajectoryDensity, predRes[modelName].count, fullTrajectoryFidelity);
 
             streamTrajectories(
                 `/api/predictions/${modelName}?${query}`,
-                (source, total) => {
-                    console.debug(`[predictions] ${source}: streaming ${total} trajectories`);
+                (_source, _total) => {
+                    // Clear old data only when first byte arrives, not before —
+                    // keeps the canvas populated during the network wait
+                    setModelPredictions(prev => ({ ...prev, [modelName]: [] }));
                 },
                 (pts) => {
                     setModelPredictions(prev => ({
@@ -164,14 +143,12 @@ export function useLoadTrajectories() {
             const controller = new AbortController();
             abortRefs.current.set(`label:${datasetName}`, controller);
 
-            const query = buildQuery(viewport, trajectoryDensity, labelRes[datasetName].count);
-
-            setLabels(prev => ({ ...prev, [datasetName]: [] }));
+            const query = buildQuery(viewport, trajectoryDensity, labelRes[datasetName].count, fullTrajectoryFidelity);
 
             streamTrajectories(
                 `/api/labels/${datasetName}?${query}`,
-                (source, total) => {
-                    console.debug(`[labels] ${source}: streaming ${total} trajectories`);
+                (_source, _total) => {
+                    setLabels(prev => ({ ...prev, [datasetName]: [] }));
                 },
                 (pts) => {
                     setLabels(prev => ({
@@ -189,10 +166,9 @@ export function useLoadTrajectories() {
     }, [
         setModelPredictions,
         setLabels,
-        setShowModelPredictions,
-        setShowLabels,
         showModelPredictions,
         showLabels,
         trajectoryDensity,
+        fullTrajectoryFidelity,
     ]);
 }

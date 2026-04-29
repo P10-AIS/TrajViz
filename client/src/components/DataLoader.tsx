@@ -68,6 +68,14 @@ function DataLoader({ children }: { children: JSX.Element }) {
                     }
                     return Object.keys(updates).length ? { ...prev, ...updates } : prev;
                 });
+
+                ctx.setHistoricHorizonM(prev => {
+                    const updates: Record<string, number | null> = {};
+                    for (const name of Object.keys(predRes)) {
+                        if (!(name in prev)) updates[name] = predRes[name].historic_horizon_m ?? null;
+                    }
+                    return Object.keys(updates).length ? { ...prev, ...updates } : prev;
+                });
             } catch (err) {
                 console.error("Failed to discover model/dataset names:", err);
             }

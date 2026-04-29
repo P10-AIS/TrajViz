@@ -66,6 +66,14 @@ def load_all_predictions(directory: str = "Predictions") -> dict[str, Trajectory
                 lats = data.get("lats")
                 lons = data.get("lons")
                 timestamps = data.get("timestamps")
+                if "historic_horizon_m" in data:
+                    raw = data["historic_horizon_m"]
+                    try:
+                        historic_horizon_m = float(raw)
+                    except (ValueError, TypeError):
+                        historic_horizon_m = float(pickle.loads(raw.item()))
+                else:
+                    historic_horizon_m = None
 
                 if lats is None or lons is None or timestamps is None:
                     print(
@@ -76,7 +84,8 @@ def load_all_predictions(directory: str = "Predictions") -> dict[str, Trajectory
                 stacked = np.stack((lats, lons, timestamps), axis=2)
                 n_traj = stacked.shape[0]
 
-                store = TrajectoryStore(name=model_name)
+                store = TrajectoryStore(
+                    name=model_name, historic_horizon_m=historic_horizon_m)
                 for i in range(n_traj):
                     store.trajectories.append(_make_trajectory(stacked[i]))
 

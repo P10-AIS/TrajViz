@@ -5,7 +5,7 @@ import numpy as np
 # Stride scales linearly between these bounds.
 MIN_ZOOM = 1
 MAX_ZOOM = 18
-MAX_STRIDE = 64  # tune this to taste
+MAX_STRIDE = 128  # tune this to taste
 
 
 def zoom_to_stride(zoom: int) -> int:
@@ -17,7 +17,7 @@ def zoom_to_stride(zoom: int) -> int:
     zoom = max(MIN_ZOOM, min(MAX_ZOOM, zoom))
     # Linear interpolation from MAX_STRIDE down to 1
     t = (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)
-    stride = MAX_STRIDE - round(t * (MAX_STRIDE - 1))
+    stride = MAX_STRIDE * ((1 - t) ** 2.5)
     return max(1, int(stride))
 
 

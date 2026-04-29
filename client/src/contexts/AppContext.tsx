@@ -55,6 +55,8 @@ export interface AppContextType {
     setZoom: (zoom: number) => void;
     center: [number, number];
     setCenter: (latlng: [number, number]) => void;
+    historicHorizonM: Record<string, number | null>;
+    setHistoricHorizonM: React.Dispatch<React.SetStateAction<Record<string, number | null>>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -78,6 +80,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [zoom, setZoom] = useState<number>(5);
     const [center, setCenter] = useState<[number, number]>([56.15674, 10.21076]);
     const [imageOpacities, setImageOpacities] = useState<ImageOpacities>({});
+    const [historicHorizonM, setHistoricHorizonM] = useState<Record<string, number | null>>({});
 
     const [polygonsDK, setPolygonsDK] = useState<Polygon[]>([]);
     const [polygonsUS, setPolygonsUS] = useState<Polygon[]>([]);
@@ -154,6 +157,8 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         setZoom,
         center,
         setCenter,
+        historicHorizonM,
+        setHistoricHorizonM,
     };
 
     return (
