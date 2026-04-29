@@ -92,13 +92,13 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
             start: "green",
             end: "red",
         },
-        dotsZoom: 8,
+        dotsZoom: 1,
         radiusScale: 3,
         lineWidthScale: 2,
         dashPattern: [4, 4],
-        numZoomLevels: 6,
+        numZoomLevels: 5,
         trajectorySimplificationThresholds: {
-            [Projection.EPSG3034]: 7, //zoomlevel where we begin to simplify
+            [Projection.EPSG3034]: 7, //zoomlevel where we begin to simplify (zooming out from here will be a more simple version of the trajectory)
             [Projection.EPSG3857]: 11,
             [Projection.EPSG32617]: 10,
         }

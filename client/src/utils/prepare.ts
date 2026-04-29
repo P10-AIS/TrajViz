@@ -48,10 +48,10 @@ export function prepareEezPolygons(parsedPolygons: ParsedPolygon[]): Polygon[] {
     return polygons;
 }
 export function preparePoints(parsedPoints: ParsedTrajectory[], numZoomLevels: number): Trajectory[] {
-    // Define the maximum step as a percentage of the total points. 
-    // e.g., 0.1 means the most simplified zoom level steps by 10% of the total points.
-    const maxStepPercentage = 0.01; 
     const minStep = 1;
+    // Instead of a tiny percentage, let's aim for a maximum of ~30 points 
+    // per trajectory when fully zoomed out. This guarantees performance.
+    const targetPointsAtMinZoom = 5;
 
     const points = parsedPoints.map((traj) => {
         const zooms: ZoomLevels<{
@@ -60,14 +60,16 @@ export function preparePoints(parsedPoints: ParsedTrajectory[], numZoomLevels: n
             boundingBox: Bound;
         }> = [];
 
-        // Calculate maxStep dynamically for THIS specific trajectory
         const totalPoints = traj.points.length;
-        const maxStep = Math.max(minStep, totalPoints * maxStepPercentage);
+        
+        // If the trajectory has 300 points, maxStep will be 10.
+        // It will take every 10th point at zoom level 0.
+        const maxStep = Math.max(minStep, Math.floor(totalPoints / targetPointsAtMinZoom));
 
         for (let zoom = 0; zoom < numZoomLevels; zoom++) {
-            // Guard against division by zero if numZoomLevels is 1
             const zoomRatio = numZoomLevels > 1 ? zoom / (numZoomLevels - 1) : 0;
             
+            // Linear interpolation between maxStep and minStep
             const step = maxStep - zoomRatio * (maxStep - minStep);
             const stepInt = Math.max(1, Math.round(step));
 
@@ -85,7 +87,7 @@ export function preparePoints(parsedPoints: ParsedTrajectory[], numZoomLevels: n
         return {
             historicHorizonM: traj.historicHorizonM,
             trajectoryId: traj.trajectoryId,
-            level: zooms, // level 0 is the most simplified
+            level: zooms, 
             enabled: true,
         };
     });

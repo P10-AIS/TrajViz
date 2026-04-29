@@ -203,6 +203,13 @@ export function drawPredictions(
       }
     }
 
+    const baseTs = predPts[0]?.timestamp;
+    const timeThreshold = baseTs !== undefined ? baseTs + (p.historicHorizonM || 0) * 60 : 0;
+    
+    const predictionStartTimestamp = predPts.find(
+      (pt) => pt?.timestamp && pt.timestamp > timeThreshold
+    )?.timestamp;
+
     // ---- draw predicted lines ----
     for (let i = 1; i < predPts.length; i++) {
       const start = predPts[i - 1];
@@ -211,18 +218,11 @@ export function drawPredictions(
       // Skip if this segment involves a null point OR is explicitly marked as padding
       if (!start || !end || p.level[trajZoom].padding[i]) continue;
 
-      const baseTs = predPts[0]?.timestamp;
-      const threshold = baseTs + (p.historicHorizonM || 0) * 60 
-
-      const predictionStartTimestamp = predPts.find(
-        pt => pt?.timestamp && pt.timestamp > threshold
-      )?.timestamp;
-
-        if (predictionStartTimestamp !== undefined && predPts[i].timestamp < predictionStartTimestamp) {
-          ctx.strokeStyle = config.colors.label;
-        } else {
-          ctx.strokeStyle = config.colors.prediction;
-        }
+      if (predictionStartTimestamp !== undefined && end.timestamp < predictionStartTimestamp) {
+        ctx.strokeStyle = config.colors.label;
+      } else {
+        ctx.strokeStyle = config.colors.prediction;
+      }
       ctx.lineWidth = config.lineWidthScale;
 
       ctx.beginPath();
