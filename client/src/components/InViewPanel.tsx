@@ -9,20 +9,29 @@ function InViewPanel() {
     const [hidden, setHidden] = useState(true);
 
     function syncLabelsWithPredictions(
-        predictions: typeof appCtx.modelPredictions, 
+        predictions: typeof appCtx.modelPredictions,
         setLabels: typeof appCtx.setLabels
     ) {
-        const allPredictions = Object.values(predictions).flat();
-        const enabledIds = new Set(
-            allPredictions.filter(p => p.enabled).map(p => p.trajectoryId)
+        const activeModels = Object.keys(appCtx.showModelPredictions)
+            .filter(model => appCtx.showModelPredictions[model]);
+        const allPredictions = activeModels.flatMap(
+            model => predictions[model] || []
         );
-        const allEnabled = allPredictions.every(p => p.enabled);
+        const enabledIds = new Set(
+            allPredictions
+                .filter(p => p.enabled)
+                .map(p => p.trajectoryId)
+        );
+        const allEnabled =
+            allPredictions.length > 0 &&
+            allPredictions.every(p => p.enabled);
+
         setLabels(prevLabels => {
             const updated: typeof prevLabels = {};
             for (const [key, labels] of Object.entries(prevLabels)) {
                 updated[key] = labels.map(l => ({
                     ...l,
-                    enabled: allEnabled || enabledIds.has(l.trajectoryId)
+                    enabled: allEnabled || enabledIds.has(l.trajectoryId),
                 }));
             }
             return updated;

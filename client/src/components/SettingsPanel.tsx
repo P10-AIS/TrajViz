@@ -238,16 +238,6 @@ function SettingsPanel() {
 
                         <hr className="border-slate-300"></hr>
 
-                        {/* Toggle prediction dots */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Show Prediction Dots</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.showPredictionDots}
-                                onChange={(e) => ctx.setShowPredictionDots(e.target.checked)}
-                            />
-                        </div>
-
                         {/* full prediction fidelity toggle */}
                         <div className="flex flex-row items-center justify-between">
                             <div>Full Prediction Fidelity</div>
@@ -255,6 +245,16 @@ function SettingsPanel() {
                                 type="checkbox"
                                 checked={ctx.fullPredictionFidelity}
                                 onChange={(e) => ctx.setFullPredictionFidelity(e.target.checked)}
+                            />
+                        </div>
+                        
+                        {/* Toggle prediction dots */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Show Prediction Dots</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.showPredictionDots}
+                                onChange={(e) => ctx.setShowPredictionDots(e.target.checked)}
                             />
                         </div>
 

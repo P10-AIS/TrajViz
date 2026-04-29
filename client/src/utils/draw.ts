@@ -186,17 +186,12 @@ export function drawPredictions(
     if (!p.enabled) return;
 
     const predPts = p.level[trajZoom].points.map((pt) => {
-      // Check if coordinates are valid numbers before passing to the map
-      if (pt.lat === null || pt.lng === null || pt.lat === undefined) {
-        return null; 
-      }
       const containerPt = map.latLngToContainerPoint([pt.lat, pt.lng]);
-      return { x: containerPt.x, y: containerPt.y };
+      return { x: containerPt.x, y: containerPt.y, timestamp: pt.timestamp };
     });
 
     if (zoom >= config.dotsZoom && showDots) {
       ctx.fillStyle = config.colors.prediction;
-      
       for (let i = 0; i < predPts.length; i++) {
         const pt = predPts[i];
         if (p.level[trajZoom].padding[i] || pt === null) {
@@ -216,7 +211,18 @@ export function drawPredictions(
       // Skip if this segment involves a null point OR is explicitly marked as padding
       if (!start || !end || p.level[trajZoom].padding[i]) continue;
 
-      ctx.strokeStyle = config.colors.prediction;
+      const baseTs = predPts[0]?.timestamp;
+      const threshold = baseTs + (p.historicHorizonM || 0) * 60 
+
+      const predictionStartTimestamp = predPts.find(
+        pt => pt?.timestamp && pt.timestamp > threshold
+      )?.timestamp;
+
+        if (predictionStartTimestamp !== undefined && predPts[i].timestamp < predictionStartTimestamp) {
+          ctx.strokeStyle = config.colors.label;
+        } else {
+          ctx.strokeStyle = config.colors.prediction;
+        }
       ctx.lineWidth = config.lineWidthScale;
 
       ctx.beginPath();

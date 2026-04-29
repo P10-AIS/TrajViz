@@ -19,6 +19,9 @@ def load_predictions(predictions_cache: dict):
                 lats = data.get('lats')
                 lons = data.get('lons')
                 timestamps = data.get('timestamps')
+                predictor_name = pickle.loads(data['predictor_name'].item()) if 'predictor_name' in data else "Unknown"
+                historic_horizon_m = pickle.loads(data['historic_horizon_m'].item()) if 'historic_horizon_m' in data else None
+                
 
                 if lats is None or lons is None or timestamps is None:
                     continue
@@ -40,7 +43,7 @@ def load_predictions(predictions_cache: dict):
                     for point in points
                 ]
 
-                predictions_cache[filename] = {"points": clean_points}
+                predictions_cache[filename] = {"points": clean_points, "predictor_name": predictor_name, "historic_horizon_m": historic_horizon_m}
                 print(
                     f"Loaded predictions from {filename} with {len(clean_points)} points.")
 

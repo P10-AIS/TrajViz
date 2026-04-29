@@ -3,7 +3,7 @@ import { getBoundingBox } from "./bounds";
 import type { Trajectory } from "../types/Prediction";
 import type { ParsedPolygon, ParsedTrajectory } from "./parse";
 import type { ZoomLevels } from "../types/ZoomLevels";
-import type { Point } from "../types/Point";
+import type { TimePoint } from "../types/Point";
 import type { Bound } from "../types/Bound";
 
 export function prepareEezPolygons(parsedPolygons: ParsedPolygon[]): Polygon[] {
@@ -48,18 +48,27 @@ export function prepareEezPolygons(parsedPolygons: ParsedPolygon[]): Polygon[] {
     return polygons;
 }
 export function preparePoints(parsedPoints: ParsedTrajectory[], numZoomLevels: number): Trajectory[] {
+    // Define the maximum step as a percentage of the total points. 
+    // e.g., 0.1 means the most simplified zoom level steps by 10% of the total points.
+    const maxStepPercentage = 0.01; 
     const minStep = 1;
-    const maxStep = 600;
 
     const points = parsedPoints.map((traj) => {
         const zooms: ZoomLevels<{
             padding: boolean[];
-            points: Point[];
+            points: TimePoint[];
             boundingBox: Bound;
         }> = [];
 
+        // Calculate maxStep dynamically for THIS specific trajectory
+        const totalPoints = traj.points.length;
+        const maxStep = Math.max(minStep, totalPoints * maxStepPercentage);
+
         for (let zoom = 0; zoom < numZoomLevels; zoom++) {
-            const step = maxStep - (zoom / (numZoomLevels - 1)) * (maxStep - minStep);
+            // Guard against division by zero if numZoomLevels is 1
+            const zoomRatio = numZoomLevels > 1 ? zoom / (numZoomLevels - 1) : 0;
+            
+            const step = maxStep - zoomRatio * (maxStep - minStep);
             const stepInt = Math.max(1, Math.round(step));
 
             const simplifiedPadding = simplify(traj.padding, stepInt);
@@ -74,8 +83,9 @@ export function preparePoints(parsedPoints: ParsedTrajectory[], numZoomLevels: n
         }
         
         return {
+            historicHorizonM: traj.historicHorizonM,
             trajectoryId: traj.trajectoryId,
-            level: zooms, //level 0 is the most simplified
+            level: zooms, // level 0 is the most simplified
             enabled: true,
         };
     });

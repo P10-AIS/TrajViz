@@ -62,13 +62,11 @@ async def omniscale_proxy(request: Request):
 
 @app.get("/predictions")
 async def get_predictions():
-    print("asdalsdkjaæoskdakdaæosdkaæsokdaæosdkæakdsaæod" + str(predictions_cache))
     return {"points": predictions_cache}
 
 
 @app.get("/labels")
 async def get_labels():
-    print("asdalsdkjaæoskdakdaæosdkaæsokdaæosdkæakdsaæod" + str(labels_cache))
     return {"points": labels_cache}
 
 

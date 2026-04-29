@@ -1,7 +1,10 @@
+import type { TimePoint } from "../types/Point";
 import { getBoundingBox } from "./bounds";
 
 type RawMultiPolygon = number[][][][];
 export type RawPoints = {
+    predictor_name: string;
+    historic_horizon_m: number | null;
     points: number[][][];
 }
 
@@ -18,8 +21,9 @@ export type ParsedPolygon = {
 
 export type ParsedTrajectory = {
     trajectoryId: number;
+    historicHorizonM: number | null;
     padding: boolean[];
-    points: { lat: number; lng: number }[];
+    points: TimePoint[];
     boundingBox: { minLat: number; minLng: number; maxLat: number; maxLng: number };
 }
 
@@ -53,10 +57,12 @@ export function parsePoints(data: RawPoints): ParsedTrajectory[] {
         const points = pred.map(pt => ({
             lat: pt[0],
             lng: pt[1],
+            timestamp: pt[2]
         }));
 
         return {
             trajectoryId: idx,
+            historicHorizonM: data.historic_horizon_m,
             padding,
             points,
             boundingBox: getBoundingBox(points),
