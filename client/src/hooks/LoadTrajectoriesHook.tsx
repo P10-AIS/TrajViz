@@ -14,6 +14,10 @@ export interface Viewport {
     zoom: number;
 }
 
+// How many trajectories to collect before flushing to React state.
+// Higher = fewer redraws during streaming, but trajectories appear in larger chunks.
+const BATCH_SIZE = 50;
+
 // ---------------------------------------------------------------------------
 // NDJSON streaming
 // ---------------------------------------------------------------------------
@@ -21,7 +25,7 @@ export interface Viewport {
 async function streamTrajectories(
     url: string,
     onHeader: (source: string, total: number) => void,
-    onTrajectory: (pts: RawTrajectory) => void,
+    onTrajectory: (pts: RawTrajectory, idx: number) => void,
     signal: AbortSignal,
 ): Promise<void> {
     const response = await fetch(url, { signal });
@@ -46,7 +50,7 @@ async function streamTrajectories(
             try {
                 const msg = JSON.parse(trimmed);
                 if (msg.type === "header") onHeader(msg.source, msg.total);
-                else if (msg.type === "traj") onTrajectory(msg.pts);
+                else if (msg.type === "traj") onTrajectory(msg.pts, msg.i);
             } catch {
                 console.warn("Failed to parse NDJSON line:", trimmed);
             }
@@ -77,20 +81,17 @@ export function useLoadTrajectories() {
         showModelPredictions,
         showLabels,
         trajectoryDensity,
-        fullTrajectoryFidelity,
+        fullFidelity: fullTrajectoryFidelity,
     } = useAppContext();
 
     const abortRefs = useRef<Map<string, AbortController>>(new Map());
 
     return useCallback(async (viewport: Viewport) => {
-        // Cancel all in-flight streams from the previous viewport
         for (const [, controller] of abortRefs.current) {
             controller.abort();
         }
         abortRefs.current.clear();
 
-        // Fetch counts — needed to compute per-model limits
-        // Names and toggles are already registered by DataLoader on mount
         let predRes: Record<string, { count: number }> = {};
         let labelRes: Record<string, { count: number }> = {};
 
@@ -114,21 +115,40 @@ export function useLoadTrajectories() {
 
             const query = buildQuery(viewport, trajectoryDensity, predRes[modelName].count, fullTrajectoryFidelity);
 
+            const receivedIds = new Set<number>();
+            const batch = new Map<number, RawTrajectory>();
+
+            const flush = () => {
+                if (batch.size === 0) return;
+                const snapshot = new Map(batch);
+                batch.clear();
+                setModelPredictions(prev => {
+                    const next = new Map(prev[modelName] ?? []);
+                    for (const [idx, pts] of snapshot) next.set(idx, pts);
+                    return { ...prev, [modelName]: next };
+                });
+            };
+
             streamTrajectories(
                 `/api/predictions/${modelName}?${query}`,
-                (_source, _total) => {
-                    // Clear old data only when first byte arrives, not before —
-                    // keeps the canvas populated during the network wait
-                    setModelPredictions(prev => ({ ...prev, [modelName]: [] }));
-                },
-                (pts) => {
-                    setModelPredictions(prev => ({
-                        ...prev,
-                        [modelName]: [...(prev[modelName] ?? []), pts],
-                    }));
+                (_source, _total) => { },
+                (pts, idx) => {
+                    receivedIds.add(idx);
+                    batch.set(idx, pts);
+                    if (batch.size >= BATCH_SIZE) flush();
                 },
                 controller.signal,
-            ).catch(err => {
+            ).then(() => {
+                flush(); // flush any remaining in the batch
+                // Prune trajectories no longer in the viewport
+                setModelPredictions(prev => {
+                    const next = new Map(prev[modelName] ?? []);
+                    for (const key of next.keys()) {
+                        if (!receivedIds.has(key)) next.delete(key);
+                    }
+                    return { ...prev, [modelName]: next };
+                });
+            }).catch(err => {
                 if (err.name !== "AbortError") {
                     console.error(`Failed streaming predictions '${modelName}':`, err);
                 }
@@ -145,19 +165,39 @@ export function useLoadTrajectories() {
 
             const query = buildQuery(viewport, trajectoryDensity, labelRes[datasetName].count, fullTrajectoryFidelity);
 
+            const receivedIds = new Set<number>();
+            const batch = new Map<number, RawTrajectory>();
+
+            const flush = () => {
+                if (batch.size === 0) return;
+                const snapshot = new Map(batch);
+                batch.clear();
+                setLabels(prev => {
+                    const next = new Map(prev[datasetName] ?? []);
+                    for (const [idx, pts] of snapshot) next.set(idx, pts);
+                    return { ...prev, [datasetName]: next };
+                });
+            };
+
             streamTrajectories(
                 `/api/labels/${datasetName}?${query}`,
-                (_source, _total) => {
-                    setLabels(prev => ({ ...prev, [datasetName]: [] }));
-                },
-                (pts) => {
-                    setLabels(prev => ({
-                        ...prev,
-                        [datasetName]: [...(prev[datasetName] ?? []), pts],
-                    }));
+                (_source, _total) => { },
+                (pts, idx) => {
+                    receivedIds.add(idx);
+                    batch.set(idx, pts);
+                    if (batch.size >= BATCH_SIZE) flush();
                 },
                 controller.signal,
-            ).catch(err => {
+            ).then(() => {
+                flush();
+                setLabels(prev => {
+                    const next = new Map(prev[datasetName] ?? []);
+                    for (const key of next.keys()) {
+                        if (!receivedIds.has(key)) next.delete(key);
+                    }
+                    return { ...prev, [datasetName]: next };
+                });
+            }).catch(err => {
                 if (err.name !== "AbortError") {
                     console.error(`Failed streaming labels '${datasetName}':`, err);
                 }

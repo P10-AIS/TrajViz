@@ -3,14 +3,13 @@ import { useAppContext } from "../contexts/AppContext";
 import { IoMdCog, IoMdClose } from "react-icons/io";
 import { useInViewContext } from "../contexts/InViewContext";
 import { Projection } from "../types/projection";
+import CollapsibleSection from "./CollapsibleSection";
 
 function SettingsPanel() {
     const ctx = useAppContext();
     const inViewCtx = useInViewContext();
     const [hidden, setHidden] = useState(true);
-    const [updatingPredictions, setUpdatingPredictions] = useState(false);
-    const [updatingLabels, setUpdatingLabels] = useState(false);
-    const [imageOverlayCollapsed, setImageOverlayCollapsed] = useState(true);
+    const [refreshingBackend, setRefreshingBackend] = useState(false);
 
     function handleTogglePrediction(checked: boolean, modelName: string) {
         ctx.setShowModelPredictions({
@@ -33,36 +32,20 @@ function SettingsPanel() {
         })
     }
 
-    async function handleUpdateBackendPredictions() {
-        setUpdatingPredictions(true);
+    async function handleRefreshBackend() {
+        setRefreshingBackend(true);
         try {
-            const res = await fetch("/api/update_predictions", { method: "POST" });
+            const res = await fetch("/api/refresh");
             if (!res.ok) {
-                throw new Error("Failed to update backend predictions");
+                throw new Error("Failed to refresh backend");
             }
         } catch (err) {
             console.error(err);
         } finally {
-            setUpdatingPredictions(false);
+            setRefreshingBackend(false);
             window.location.reload();
         }
     }
-
-    async function handleUpdateBackendLabels() {
-        setUpdatingLabels(true);
-        try {
-            const res = await fetch("/api/update_labels", { method: "POST" });
-            if (!res.ok) {
-                throw new Error("Failed to update backend labels");
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setUpdatingLabels(false);
-            window.location.reload();
-        }
-    }
-
 
     return (
         <div className="absolute top-5 left-5 bg-white rounded p-4 shadow-lg z-2000 overflow-auto text-slate-600 text-sm max-h-[95vh]">
@@ -155,57 +138,7 @@ function SettingsPanel() {
                             />
                         </div>
 
-                        <hr className="border-slate-300"></hr>
-
-                        {/* eez toggle */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Show EEZ DK</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.eezDKOutlineVisible}
-                                onChange={(e) => ctx.setEezDKOutlineVisible(e.target.checked)}
-                            />
-                        </div>
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Show EEZ US</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.eezUSOutlineVisible}
-                                onChange={(e) => ctx.setEezUSOutlineVisible(e.target.checked)}
-                            />
-                        </div>
-
-                        {/* full eez fidelity toggle */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Full EEZ Fidelity</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.fullEezFidelity}
-                                onChange={(e) => ctx.setFullEezFidelity(e.target.checked)}
-                            />
-                        </div>
-
-                        <hr className="border-slate-300"></hr>
-
-                        {/* full trajectory fidelity toggle */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Full Trajectory Fidelity</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.fullTrajectoryFidelity}
-                                onChange={(e) => ctx.setFullTrajectoryFidelity(e.target.checked)}
-                            />
-                        </div>
-
-                        {/* Toggle trajectory dots */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Show Trajectory Dots</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.showTrajectoryDots}
-                                onChange={(e) => ctx.setShowTrajectoryDots(e.target.checked)}
-                            />
-                        </div>
+                        {/* Density slider*/}
                         <div className="flex flex-col">
                             <div className="flex flex-row justify-between">
                                 <div>Trajcetory Density </div>
@@ -221,143 +154,138 @@ function SettingsPanel() {
                             />
                         </div>
 
-                        <div>Toggle Labels:</div>
-                        <div className="p-2 bg-gray-200 rounded">
-                            {Object.keys(ctx.showLabels).map((labelName) => (
+                        {/* full trajectory fidelity toggle */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Full Fidelity</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.fullFidelity}
+                                onChange={(e) => ctx.setFullFidelity(e.target.checked)}
+                            />
+                        </div>
+
+                        {/* Toggle Trajectory dots */}
+                        <div className="flex flex-row items-center justify-between">
+                            <div>Show Trajectory Dots</div>
+                            <input
+                                type="checkbox"
+                                checked={ctx.showTrajectoryDots}
+                                onChange={(e) => ctx.setShowTrajectoryDots(e.target.checked)}
+                            />
+                        </div>
+
+                        <hr className="border-slate-300"></hr>
+
+                        <CollapsibleSection title="EEZ Outlines">
+                            <div className="flex flex-row items-center justify-between">
+                                <div>DK</div>
+                                <input
+                                    type="checkbox"
+                                    checked={ctx.eezDKOutlineVisible}
+                                    onChange={(e) => ctx.setEezDKOutlineVisible(e.target.checked)}
+                                />
+                            </div>
+                            <div className="flex flex-row items-center justify-between">
+                                <div>US</div>
+                                <input
+                                    type="checkbox"
+                                    checked={ctx.eezUSOutlineVisible}
+                                    onChange={(e) => ctx.setEezUSOutlineVisible(e.target.checked)}
+                                />
+                            </div>
+                        </CollapsibleSection>
+
+
+                        <hr className="border-slate-300"></hr>
+
+                        <CollapsibleSection title="Labels">
+                            {Object.keys(ctx.showLabels).map(labelName => (
                                 <div key={labelName} className="flex flex-row items-center space-x-3">
                                     <div className="truncate">{labelName}</div>
-                                    <input
-                                        type="checkbox"
-                                        className="ml-auto"
+                                    <input type="checkbox" className="ml-auto"
                                         checked={ctx.showLabels[labelName] || false}
                                         onChange={(e) => handleToggleLabel(e.target.checked, labelName)}
                                     />
                                 </div>
                             ))}
-                        </div>
+                        </CollapsibleSection>
 
                         <hr className="border-slate-300"></hr>
 
-                        {/* full prediction fidelity toggle */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Full Prediction Fidelity</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.fullPredictionFidelity}
-                                onChange={(e) => ctx.setFullPredictionFidelity(e.target.checked)}
-                            />
-                        </div>
-
-                        {/* Toggle prediction dots */}
-                        <div className="flex flex-row items-center justify-between">
-                            <div>Show Prediction Dots</div>
-                            <input
-                                type="checkbox"
-                                checked={ctx.showPredictionDots}
-                                onChange={(e) => ctx.setShowPredictionDots(e.target.checked)}
-                            />
-                        </div>
-
-                        {/* show prediction toggles */}
-                        <div>Toggle Model Predictions:</div>
-                        <div className="p-2 bg-gray-200 rounded">
-                            {Object.keys(ctx.showModelPredictions).map((modelName) => (
+                        <CollapsibleSection title="Model Predictions">
+                            {Object.keys(ctx.showModelPredictions).map(modelName => (
                                 <div key={modelName} className="flex flex-row items-center space-x-3">
                                     <div className="truncate">{modelName}</div>
-                                    <input
-                                        type="checkbox"
-                                        className="ml-auto"
+                                    <input type="checkbox" className="ml-auto"
                                         checked={ctx.showModelPredictions[modelName] || false}
                                         onChange={(e) => handleTogglePrediction(e.target.checked, modelName)}
                                     />
                                 </div>
                             ))}
-                        </div>
+                        </CollapsibleSection>
+
 
                         <hr className="border-slate-300"></hr>
-                        {/* Image overlays */}
-                        <div className="bg-gray-100 rounded overflow-hidden">
-                            <button
-                                onClick={() => setImageOverlayCollapsed(!imageOverlayCollapsed)}
-                                className="w-full flex items-center justify-between p-4 hover:bg-gray-200 transition-colors focus:outline-none"
-                            >
-                                <span className="text-sm font-semibold text-gray-700">
-                                    Image Overlays
-                                </span>
-                                <svg
-                                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${imageOverlayCollapsed ? '' : 'rotate-180'}`}
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
 
-                            {/* Collapsible Content */}
-                            {!imageOverlayCollapsed && (
-                                <div className="p-4 pt-0 space-y-4">
-                                    {Object.keys(ctx.imageOverlays).map((name) => {
-                                        const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (_, base, proj) => {
-                                            return `${base}_${proj.replace('.', ':')}`;
-                                        });
 
-                                        if (!name.includes(`PROJ_${ctx.projection.replace(':', '.')}`)) {
-                                            return null;
-                                        }
+                        <CollapsibleSection title="Image Overlays">
+                            {Object.keys(ctx.imageOverlays).map((name) => {
+                                const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (_, base, proj) => {
+                                    return `${base}_${proj.replace('.', ':')}`;
+                                });
 
-                                        return (
-                                            <div key={name} className="flex flex-col p-2 bg-white rounded border border-gray-200 shadow-sm transition-all hover:border-blue-400">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span
-                                                        className="text-sm font-medium text-gray-700 truncate cursor-help"
-                                                        title={name}
-                                                    >
-                                                        {formattedName}
-                                                    </span>
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                                        checked={ctx.showImageOverlay[name] || false}
-                                                        onChange={(e) => ctx.setShowImageOverlay({
-                                                            ...ctx.showImageOverlay,
-                                                            [name]: e.target.checked
-                                                        })}
-                                                    />
-                                                </div>
+                                if (!name.includes(`PROJ_${ctx.projection.replace(':', '.')}`)) {
+                                    return null;
+                                }
 
-                                                <div className="flex items-center space-x-2">
-                                                    <span className="text-xs text-gray-400">Opacity</span>
-                                                    <input
-                                                        type="range"
-                                                        min={0}
-                                                        max={1}
-                                                        step={0.01}
-                                                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                                                        value={ctx.imageOpacities[name] ?? 1}
-                                                        onChange={(e) =>
-                                                            ctx.setImageOpacities((prev) => ({
-                                                                ...prev,
-                                                                [name]: parseFloat(e.target.value),
-                                                            }))
-                                                        }
-                                                    />
-                                                    <span className="text-xs font-mono text-gray-500 w-8">
-                                                        {Math.round((ctx.imageOpacities[name] || 1) * 100)}%
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
+                                return (
+                                    <div key={name} className="flex flex-col p-2 bg-white rounded border border-gray-200 shadow-sm transition-all hover:border-blue-400">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span
+                                                className="text-sm font-medium text-gray-700 truncate cursor-help"
+                                                title={name}
+                                            >
+                                                {formattedName}
+                                            </span>
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                                checked={ctx.showImageOverlay[name] || false}
+                                                onChange={(e) => ctx.setShowImageOverlay({
+                                                    ...ctx.showImageOverlay,
+                                                    [name]: e.target.checked
+                                                })}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-xs text-gray-400">Opacity</span>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={1}
+                                                step={0.01}
+                                                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                value={ctx.imageOpacities[name] ?? 1}
+                                                onChange={(e) =>
+                                                    ctx.setImageOpacities((prev) => ({
+                                                        ...prev,
+                                                        [name]: parseFloat(e.target.value),
+                                                    }))
+                                                }
+                                            />
+                                            <span className="text-xs font-mono text-gray-500 w-8">
+                                                {Math.round((ctx.imageOpacities[name] || 1) * 100)}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </CollapsibleSection>
+
                         <hr className="border-slate-300"></hr>
-                        <button onClick={handleUpdateBackendPredictions} className="rounded bg-blue-600 text-white py-2 px-4 hover:bg-blue-700 transition-colors" disabled={updatingPredictions}>
-                            {updatingPredictions ? "Updating..." : "Update BE Predictions"}
-                        </button>
-                        <button onClick={handleUpdateBackendLabels} className="rounded bg-blue-600 text-white py-2 px-4 hover:bg-blue-700 transition-colors" disabled={updatingLabels}>
-                            {updatingLabels ? "Updating..." : "Update BE Labels"}
+                        <button onClick={handleRefreshBackend} className="rounded bg-blue-600 text-white py-2 px-4 hover:bg-blue-700 transition-colors" disabled={refreshingBackend}>
+                            {refreshingBackend ? "Refreshing..." : "Refresh backend"}
                         </button>
                     </div>
                 )

@@ -53,7 +53,7 @@ function viewBox(map: L.Map): Bound {
 // ---------------------------------------------------------------------------
 
 export function drawTrajectories(
-  trajectories: RawTrajectory[],
+  trajectories: Map<number, RawTrajectory>,
   showDots: boolean,
   info: DrawInfo,
   config: DrawConfig,
@@ -64,15 +64,11 @@ export function drawTrajectories(
   const ctx = canvas.getContext("2d")!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const view = viewBox(map);
   const zoom = map.getZoom();
   const markerSize = config.radiusScale * 1.5;
 
-  for (const traj of trajectories) {
+  for (const traj of trajectories.values()) {
     if (!traj || traj.length === 0) continue;
-
-    const bbox = trajectoryBbox(traj);
-    if (!isBoundingBoxInView(bbox, view)) continue;
 
     // Project all points to canvas pixels
     const pts = traj.map(([lat, lon]) => {
@@ -119,7 +115,7 @@ export function drawTrajectories(
 // ---------------------------------------------------------------------------
 
 export function drawPredictions(
-  predictions: RawTrajectory[],
+  predictions: Map<number, RawTrajectory>,
   showDots: boolean,
   historicHorizonMinutes: number | null,
   idsInViewCallback: (idsInView: Set<number>) => void,
@@ -134,15 +130,12 @@ export function drawPredictions(
   const ctx = canvas.getContext("2d")!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const view = viewBox(map);
   const zoom = map.getZoom();
   const idsInView = new Set<number>();
 
-  predictions.forEach((traj, idx) => {
-    if (!traj || traj.length === 0) return;
+  for (const [idx, traj] of predictions.entries()) {
 
-    const bbox = trajectoryBbox(traj);
-    if (!isBoundingBoxInView(bbox, view)) return;
+    if (!traj || traj.length === 0) return;
 
     idsInView.add(idx);
 
@@ -186,7 +179,7 @@ export function drawPredictions(
         ctx.fillRect(pt.x - s / 2, pt.y - s / 2, s, s);
       }
     }
-  });
+  }
 
   idsInViewCallback(idsInView);
 }

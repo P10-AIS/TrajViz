@@ -89,24 +89,15 @@ def _stream_trajectories(store: TrajectoryStore, lat_min, lat_max, lon_min, lon_
     and detect clean stream completion vs a dropped connection.
     """
     matching = trajectories_in_viewport(
-        store, lat_min, lat_max, lon_min, lon_max)
+        store, lat_min, lat_max, lon_min, lon_max, limit)
 
-    if already_have:
-        new_only = [t for i, t in enumerate(matching) if i not in already_have]
-    else:
-        new_only = matching
-
-    if limit is not None:
-        new_only = new_only[:limit]
-
-    # Header — tells the frontend total count before data starts arriving
     yield json.dumps({"type": "header", "source": store.name, "total": len(matching)}) + "\n"
 
-    for i, traj in enumerate(new_only):
+    for traj, store_idx in matching:  # need (traj, original_index) pairs
         pts = thin_trajectory(traj.points, zoom)
         if not pts:
             continue
-        yield json.dumps({"type": "traj", "i": i, "pts": pts}) + "\n"
+        yield json.dumps({"type": "traj", "i": store_idx, "pts": pts}) + "\n"
 
     yield json.dumps({"type": "done"}) + "\n"
 
@@ -192,23 +183,20 @@ async def list_labels():
     }
 
 
-@app.post("/reload/predictions")
-async def reload_predictions():
+@app.get("/refresh")
+async def refresh():
     global prediction_stores
-    prediction_stores = load_all_predictions()
-    return {"reloaded": list(prediction_stores.keys())}
-
-
-@app.post("/reload/labels")
-async def reload_labels():
     global label_stores
-    label_stores = load_all_labels()
-    return {"reloaded": list(label_stores.keys())}
 
+    prediction_stores = load_all_predictions()
+    label_stores = load_all_labels()
+
+    return {"status": "success", "message": "Backend data refreshed."}
 
 # ---------------------------------------------------------------------------
 # Image / heatmap endpoints (unchanged)
 # ---------------------------------------------------------------------------
+
 
 @app.get("/omniscale/wms")
 async def omniscale_proxy(request: Request):

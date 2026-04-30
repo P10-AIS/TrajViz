@@ -26,11 +26,15 @@ export default function MapController() {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
       const bounds = map.getBounds();
+
+      const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.5; // 50% padding
+      const lonPad = (bounds.getEast() - bounds.getWest()) * 0.5;
+
       loadTrajectories({
-        latMin: bounds.getSouth(),
-        latMax: bounds.getNorth(),
-        lonMin: bounds.getWest(),
-        lonMax: bounds.getEast(),
+        latMin: bounds.getSouth() - latPad,
+        latMax: bounds.getNorth() + latPad,
+        lonMin: bounds.getWest() - lonPad,
+        lonMax: bounds.getEast() + lonPad,
         zoom: map.getZoom(),
       });
     }, DEBOUNCE_MS);

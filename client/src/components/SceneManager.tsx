@@ -5,7 +5,6 @@ import { useSnapshotManager, type Snapshot } from "../hooks/SceneHook";
 interface RestoreFeedback {
     success: boolean;
     missingKeys: string[];
-    missingRecords: Record<string, string[]>;
 }
 
 export default function SceneManager() {
@@ -23,7 +22,7 @@ export default function SceneManager() {
     const handleSave = () => {
         if (!snapshotName.trim()) return;
         takeSnapshot(snapshotName);
-        setSnapshotName(""); 
+        setSnapshotName("");
     };
 
     const handleRestore = (snapshot: Snapshot) => {
@@ -58,9 +57,8 @@ export default function SceneManager() {
 
                     {/* Wrap the entire block in a null check */}
                     {restoreStatus && (
-                        <div className={`p-3 rounded border flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-300 ${
-                            restoreStatus.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700'
-                        }`}>
+                        <div className={`p-3 rounded border flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-300 ${restoreStatus.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700'
+                            }`}>
                             {/* Header */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 font-bold">
@@ -119,7 +117,7 @@ export default function SceneManager() {
                             onChange={(e) => setSnapshotName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                         />
-                        <button 
+                        <button
                             onClick={handleSave}
                             className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:opacity-50"
                             disabled={!snapshotName.trim()}
@@ -138,8 +136,8 @@ export default function SceneManager() {
                             const isIncomplete = missing.length > 0;
 
                             return (
-                                <div 
-                                    key={snapshot.id} 
+                                <div
+                                    key={snapshot.id}
                                     className="flex items-center justify-between p-2 bg-slate-50 rounded hover:bg-slate-100 group"
                                 >
                                     <div className="flex flex-col overflow-hidden">
@@ -148,9 +146,9 @@ export default function SceneManager() {
                                                 {snapshot.name}
                                             </span>
                                             {isIncomplete && (
-                                                <IoIosWarning 
-                                                    className="text-amber-500 flex-shrink-0" 
-                                                    title={`Data mismatch: missing ${missing.join(", ")}`} 
+                                                <IoIosWarning
+                                                    className="text-amber-500 flex-shrink-0"
+                                                    title={`Data mismatch: missing ${missing.join(", ")}`}
                                                 />
                                             )}
                                         </div>
@@ -158,16 +156,16 @@ export default function SceneManager() {
                                             {new Date(snapshot.timestamp).toLocaleString()}
                                         </span>
                                     </div>
-                                    
+
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button 
+                                        <button
                                             onClick={() => handleRestore(snapshot)}
                                             className="p-1.5 text-blue-600 hover:bg-blue-200 rounded"
                                             title={isIncomplete ? "Restore (Partial data only)" : "Restore Scene"}
                                         >
                                             <IoIosRefresh size={16} />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => deleteSnapshot(snapshot.id)}
                                             className="p-1.5 text-red-600 hover:bg-red-200 rounded"
                                             title="Delete"
