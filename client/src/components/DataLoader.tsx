@@ -107,6 +107,7 @@ function DataLoader({ children }: { children: JSX.Element }) {
                 for (const imageName of data.images) {
                     try {
                         const image = await fetchMapImage(imageName);
+                        console.log("Image bounds:", image.area);
                         ctx.setImageOverlays(prev => ({ ...prev, [imageName]: image }));
                     } catch (err) {
                         console.error(`Failed to load image ${imageName}:`, err);

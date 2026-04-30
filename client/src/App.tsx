@@ -35,7 +35,7 @@ function App() {
 
             {Object.entries(appCtx.imageOverlays).map(([name, image]) => (
               appCtx.showImageOverlay[name] &&
-              name.includes(`PROJ_${appCtx.projection.replace(':', '.')}`) &&
+              appCtx.imageOverlays[name]?.projection === appCtx.projection &&
               <CanvasLayer key={name} zIndex={1} drawMethod={(info) =>
                 drawGeoImage(image, appCtx.imageOpacities[name] ?? 1, info)
               } />

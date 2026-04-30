@@ -42,9 +42,7 @@ function SettingsPanel() {
         setRefreshingBackend(true);
         try {
             const res = await fetch("/api/refresh");
-            if (!res.ok) {
-                throw new Error("Failed to refresh backend");
-            }
+            if (!res.ok) throw new Error("Failed to refresh backend");
         } catch (err) {
             console.error(err);
         } finally {
@@ -236,14 +234,10 @@ function SettingsPanel() {
 
                         <CollapsibleSection title="Image Overlays">
                             {Object.keys(ctx.imageOverlays).map((name) => {
-                                const formattedName = name.replace(/^(.*)\{.*PROJ_(.*?)\}/, (_, base, proj) => {
-                                    return `${base}_${proj.replace('.', ':')}`;
-                                });
-
-                                if (!name.includes(`PROJ_${ctx.projection.replace(':', '.')}`)) {
+                                const formattedName = name;
+                                if (ctx.imageOverlays[name]?.projection !== ctx.projection) {
                                     return null;
                                 }
-
                                 return (
                                     <div key={name} className="flex flex-col p-2 bg-white rounded border border-gray-200 shadow-sm transition-all hover:border-blue-400">
                                         <div className="flex items-center justify-between mb-2">

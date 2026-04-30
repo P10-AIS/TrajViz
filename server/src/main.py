@@ -1,7 +1,15 @@
+from rasterio.warp import transform_bounds
+import rasterio
 import json
 import os
 import re
+import io
 from contextlib import asynccontextmanager
+from PIL import Image as PILImage
+from rasterio.warp import transform_bounds
+from fastapi.responses import Response
+from pyproj import Transformer
+
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -24,7 +32,7 @@ prediction_stores: dict[str, TrajectoryStore] = {}
 label_stores: dict[str, TrajectoryStore] = {}
 http_client: httpx.AsyncClient
 
-IMAGES_FOLDER = "Data/Heatmaps"
+IMAGES_FOLDER = "Data/Images"
 
 
 @asynccontextmanager
@@ -235,31 +243,49 @@ def list_images():
         images = [
             f for f in os.listdir(IMAGES_FOLDER)
             if os.path.isfile(os.path.join(IMAGES_FOLDER, f))
-            and HEATMAP_PATTERN.search(f)
+            and f.lower().endswith((".tif", ".tiff"))
         ]
     return {"images": images}
 
 
 @app.get("/image/{filename}")
-def get_heatmap(filename: str):
+def get_image(filename: str):
     path = os.path.join(IMAGES_FOLDER, filename)
     if not (os.path.exists(path) and os.path.isfile(path)):
-        raise HTTPException(status_code=404, detail="Heatmap not found.")
+        raise HTTPException(status_code=404, detail="Image not found.")
 
-    match = HEATMAP_PATTERN.search(filename)
-    if not match:
-        raise HTTPException(status_code=400, detail="Invalid filename format.")
+    try:
+        with rasterio.open(path) as src:
+            crs_string = src.crs.to_string()
+            transformer = Transformer.from_crs(
+                src.crs, "EPSG:4326", always_xy=True)
 
-    c = match.groupdict()
-    metadata = {
-        "projection": c["proj_str"].replace(".", ":"),
-        "area": {
-            "top_right": {"lat": float(c["tr_lat"]), "lon": float(c["tr_lon"])},
-            "bottom_left": {"lat": float(c["bl_lat"]), "lon": float(c["bl_lon"])},
-        },
-    }
-    return FileResponse(
-        path,
+            left, bottom, right, top = src.bounds
+            lon_min, lat_min = transformer.transform(left, bottom)
+            lon_max, lat_max = transformer.transform(right, top)
+
+            metadata = {
+                "projection": crs_string,
+                "area": {
+                    "top_right": {"lat": lat_max, "lon": lon_max},
+                    "bottom_left": {"lat": lat_min, "lon": lon_min},
+                },
+            }
+
+            # Read RGB bands and convert to PNG in memory
+            data = src.read([1, 2, 3]).transpose(1, 2, 0)  # (H, W, 3)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to read GeoTIFF: {e}")
+
+    img = PILImage.fromarray(data, mode="RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    return Response(
+        content=buf.read(),
         media_type="image/png",
         headers={"x-image-metadata": json.dumps(metadata)},
     )
