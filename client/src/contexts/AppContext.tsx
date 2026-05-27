@@ -4,8 +4,8 @@ import type { GeoImage } from '../types/GeoImage';
 import type { DrawConfig } from '../types/DrawConfig';
 import { Projection } from '../types/projection';
 import type { ImageOpacities } from '../types/Opacity';
-import type { RawForces, RawTrajectory } from '../utils/draw';
 import { useLocalStorageState } from '../hooks/LocalStorageState';
+import type { RawTrajectory } from '../types/Raw';
 
 export interface AppContextType {
     polygonsDK: Polygon[];
@@ -31,21 +31,6 @@ export interface AppContextType {
 
     modelPredictions: Record<string, Map<number, RawTrajectory>>;
     setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, Map<number, RawTrajectory>>>>;
-
-    modelForces: Record<string, Map<number, RawForces | null>>;
-    setModelForces: React.Dispatch<React.SetStateAction<Record<string, Map<number, RawForces | null>>>>;
-
-    forceConfig: Record<string, { enabled: boolean[] }>;
-    setForceConfig: React.Dispatch<React.SetStateAction<Record<string, { enabled: boolean[] }>>>;
-
-    forceScale: number;
-    setForceScale: (scale: number) => void;
-
-    numForces: Record<string, number>;
-    setNumForces: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-
-    forceNames: Record<string, string[]>;
-    setForceNames: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
 
     showLabels: Record<string, boolean>;
     setShowLabels: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
@@ -97,6 +82,9 @@ export interface AppContextType {
 
     disabledTrajectories: Record<string, Set<number>>;
     setDisabledTrajectories: React.Dispatch<React.SetStateAction<Record<string, Set<number>>>>;
+
+    numBeams: Record<string, number>;
+    setNumBeams: React.Dispatch<React.SetStateAction<Record<string, number>>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -117,7 +105,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [center, setCenter] = useLocalStorageState<[number, number]>("center", [56.15674, 10.21076]);
     const [imageOpacities, setImageOpacities] = useLocalStorageState("imageOpacities", {});
     const [numHistoricTokens, setNumHistoricTokens] = useLocalStorageState("numHistoricTokens", {});
-    const [forceScale, setForceScale] = useLocalStorageState("forceScale", 20);
     const [drawConfig, setDrawConfig] = useLocalStorageState<DrawConfig>("drawConfig", {
         colors: {
             label: "rgba(0,100,255)",
@@ -141,10 +128,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [polygonsDK, setPolygonsDK] = useState<Polygon[]>([]);
     const [polygonsUS, setPolygonsUS] = useState<Polygon[]>([]);
     const [modelPredictions, setModelPredictions] = useState<Record<string, Map<number, RawTrajectory>>>({});
-    const [modelForces, setModelForces] = useState<Record<string, Map<number, RawForces | null>>>({});
-    const [forceConfig, setForceConfig] = useState<Record<string, { enabled: boolean[] }>>({});
-    const [numForces, setNumForces] = useState<Record<string, number>>({});
-    const [forceNames, setForceNames] = useState<Record<string, string[]>>({});
+    const [numBeams, setNumBeams] = useState<Record<string, number>>({});
     const [labels, setLabels] = useState<Record<string, Map<number, RawTrajectory>>>({});
     const [shipSizeGuideImage, setShipSizeGuideImage] = useState<HTMLImageElement | null>(null);
     const [imageOverlays, setImageOverlays] = useState<Record<string, GeoImage>>({});
@@ -180,10 +164,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         showMapTiles, setShowMapTiles,
         showModelPredictions, setShowModelPredictions,
         modelPredictions, setModelPredictions,
-        modelForces, setModelForces,
-        forceConfig, setForceConfig,
-        numForces, setNumForces,
-        forceNames, setForceNames,
         showLabels, setShowLabels,
         labels, setLabels,
         trajectoryDensity, setTrajectoryDensity,
@@ -201,7 +181,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         modelPredictionsInView, setModelPredictionsInView,
         labelsInView, setLabelsInView,
         disabledTrajectories, setDisabledTrajectories,
-        forceScale, setForceScale,
+        numBeams, setNumBeams,
     };
 
     return (

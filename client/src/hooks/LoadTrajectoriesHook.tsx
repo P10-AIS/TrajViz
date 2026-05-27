@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useAppContext } from "../contexts/AppContext";
-import type { RawForces, RawTrajectory } from "../utils/draw";
+import type { RawTrajectory } from "../types/Raw";
 
 export interface Viewport {
     latMin: number;
@@ -15,7 +15,7 @@ const BATCH_SIZE = 50;
 async function streamTrajectories(
     url: string,
     onHeader: (source: string, total: number) => void,
-    onTrajectory: (pts: RawTrajectory, idx: number, forces: RawForces | null) => void,
+    onTrajectory: (pts: RawTrajectory, idx: number) => void,
     signal: AbortSignal,
 ): Promise<void> {
     const response = await fetch(url, { signal });
@@ -40,13 +40,14 @@ async function streamTrajectories(
             try {
                 const msg = JSON.parse(trimmed);
                 if (msg.type === "header") onHeader(msg.source, msg.total);
-                else if (msg.type === "traj") onTrajectory(msg.pts, msg.i, msg.forces ?? null);
+                else if (msg.type === "traj") onTrajectory(msg.pts, msg.i);
             } catch {
                 console.warn("Failed to parse NDJSON line:", trimmed);
             }
         }
     }
 }
+
 
 function buildQuery(vp: Viewport, density: number, totalCount: number, fullFidelity: boolean): string {
     const limit = Math.max(1, Math.ceil(totalCount * density));
@@ -63,7 +64,6 @@ function buildQuery(vp: Viewport, density: number, totalCount: number, fullFidel
 export function useLoadTrajectories() {
     const {
         setModelPredictions,
-        setModelForces,
         setLabels,
         showModelPredictions,
         showLabels,
@@ -79,7 +79,7 @@ export function useLoadTrajectories() {
         }
         abortRefs.current.clear();
 
-        let predRes: Record<string, { count: number; num_forces: number }> = {};
+        let predRes: Record<string, { count: number }> = {};
         let labelRes: Record<string, { count: number }> = {};
 
         try {
@@ -104,23 +104,15 @@ export function useLoadTrajectories() {
 
             const receivedIds = new Set<number>();
             const trajBatch = new Map<number, RawTrajectory>();
-            const forcesBatch = new Map<number, RawForces | null>();
 
             const flush = () => {
                 if (trajBatch.size === 0) return;
                 const trajSnap = new Map(trajBatch);
-                const forcesSnap = new Map(forcesBatch);
                 trajBatch.clear();
-                forcesBatch.clear();
 
                 setModelPredictions(prev => {
                     const next = new Map(prev[modelName] ?? []);
                     for (const [idx, pts] of trajSnap) next.set(idx, pts);
-                    return { ...prev, [modelName]: next };
-                });
-                setModelForces(prev => {
-                    const next = new Map(prev[modelName] ?? []);
-                    for (const [idx, f] of forcesSnap) next.set(idx, f);
                     return { ...prev, [modelName]: next };
                 });
             };
@@ -128,21 +120,15 @@ export function useLoadTrajectories() {
             streamTrajectories(
                 `/api/predictions/${modelName}?${query}`,
                 (_source, _total) => { },
-                (pts, idx, forces) => {
+                (pts, idx) => {
                     receivedIds.add(idx);
                     trajBatch.set(idx, pts);
-                    forcesBatch.set(idx, forces);
                     if (trajBatch.size >= BATCH_SIZE) flush();
                 },
                 controller.signal,
             ).then(() => {
                 flush();
                 setModelPredictions(prev => {
-                    const next = new Map(prev[modelName] ?? []);
-                    for (const key of next.keys()) if (!receivedIds.has(key)) next.delete(key);
-                    return { ...prev, [modelName]: next };
-                });
-                setModelForces(prev => {
                     const next = new Map(prev[modelName] ?? []);
                     for (const key of next.keys()) if (!receivedIds.has(key)) next.delete(key);
                     return { ...prev, [modelName]: next };
@@ -179,7 +165,7 @@ export function useLoadTrajectories() {
             streamTrajectories(
                 `/api/labels/${datasetName}?${query}`,
                 (_source, _total) => { },
-                (pts, idx, _forces) => {
+                (pts, idx) => {
                     receivedIds.add(idx);
                     batch.set(idx, pts);
                     if (batch.size >= BATCH_SIZE) flush();
@@ -198,7 +184,6 @@ export function useLoadTrajectories() {
         }
     }, [
         setModelPredictions,
-        setModelForces,
         setLabels,
         showModelPredictions,
         showLabels,

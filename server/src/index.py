@@ -1,21 +1,20 @@
-from src.models import Trajectory, TrajectoryStore
-
-
 def trajectories_in_viewport(
-    store: TrajectoryStore,
-    lat_min, lat_max, lon_min, lon_max, limit: int | None = None,
-) -> list[tuple[Trajectory, int]]:
+    store,
+    lat_min: float,
+    lat_max: float,
+    lon_min: float,
+    lon_max: float,
+    limit: int | None = None,
+) -> list[int]:
     result = []
+    cap = limit if limit is not None else len(store.trajectories)
 
-    if limit is None:
-        limit = len(store.trajectories)
-
-    for i, traj in enumerate(store.trajectories[:limit]):
+    for i, traj in enumerate(store.trajectories[:cap]):
         if (
-            traj.lat_max >= lat_min
-            and traj.lat_min <= lat_max
-            and traj.lon_max >= lon_min
-            and traj.lon_min <= lon_max
+            traj.bbox.lat_max >= lat_min
+            and traj.bbox.lat_min <= lat_max
+            and traj.bbox.lon_max >= lon_min
+            and traj.bbox.lon_min <= lon_max
         ):
-            result.append((traj, i))
+            result.append(i)
     return result

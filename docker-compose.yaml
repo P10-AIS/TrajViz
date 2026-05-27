@@ -17,5 +17,6 @@ services:
     env_file:
       - ./server/.env
     volumes:
-      - /mnt/dataimputationgroup/Crate/Data:/app/Data
-      - /mnt/dataimputationgroup/TRAIT/Predictions:/app/Predictions
+      - /home/ubuntu/Experiments/Outputs/Datasets:/app/Data
+      - /home/ubuntu/Experiments/Outputs/Predictions:/app/Predictions
+      - /home/ubuntu/Experiments/Outputs/Images:/app/Images

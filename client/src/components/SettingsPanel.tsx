@@ -3,7 +3,6 @@ import { useAppContext } from "../contexts/AppContext";
 import { IoMdCog, IoMdClose } from "react-icons/io";
 import { Projection } from "../types/projection";
 import CollapsibleSection from "./CollapsibleSection";
-import { forceColor } from "../utils/draw";
 
 function SettingsPanel() {
     const ctx = useAppContext();
@@ -23,16 +22,6 @@ function SettingsPanel() {
         ctx.setLabelsInView(prev => {
             if (!checked) { const n = { ...prev }; delete n[labelName]; return n; }
             return prev;
-        });
-    }
-
-    function handleForceToggle(modelName: string, forceIdx: number, enabled: boolean) {
-        ctx.setForceConfig(prev => {
-            const current = prev[modelName];
-            if (!current) return prev;
-            const newEnabled = [...current.enabled];
-            newEnabled[forceIdx] = enabled;
-            return { ...prev, [modelName]: { ...current, enabled: newEnabled } };
         });
     }
 
@@ -85,17 +74,14 @@ function SettingsPanel() {
                         <div>Show Map Tiles</div>
                         <input type="checkbox" checked={ctx.showMapTiles} onChange={(e) => ctx.setShowMapTiles(e.target.checked)} />
                     </div>
-
                     <div className="flex flex-row items-center justify-between">
                         <div>Enable Ship Size Guide</div>
                         <input type="checkbox" checked={ctx.enableShipSizeGuide} onChange={(e) => ctx.setEnableShipSizeGuide(e.target.checked)} />
                     </div>
-
                     <div className="flex flex-row items-center justify-between">
                         <div>Full Fidelity</div>
                         <input type="checkbox" checked={ctx.fullFidelity} onChange={(e) => ctx.setFullFidelity(e.target.checked)} />
                     </div>
-
                     <div className="flex flex-row items-center justify-between">
                         <div>Show Trajectory Dots</div>
                         <input type="checkbox" checked={ctx.showTrajectoryDots} onChange={(e) => ctx.setShowTrajectoryDots(e.target.checked)} />
@@ -118,15 +104,6 @@ function SettingsPanel() {
                                 onChange={(e) => ctx.setDrawConfig({ ...ctx.drawConfig, [key]: Number(e.target.value) })} />
                         </div>
                     ))}
-
-                    <div className="flex flex-col">
-                        <div className="flex flex-row justify-between">
-                            <div>Force Scale</div>
-                            <span className="font-mono text-slate-500">{ctx.forceScale}</span>
-                        </div>
-                        <input type="range" min={0} max={100} step={1} value={ctx.forceScale}
-                            onChange={(e) => ctx.setForceScale(Number(e.target.value))} />
-                    </div>
 
                     <div className="flex flex-col">
                         <div className="flex flex-row justify-between">
@@ -153,7 +130,7 @@ function SettingsPanel() {
                     <hr className="border-slate-300" />
 
                     <CollapsibleSection title="Labels">
-                        {Object.keys(ctx.showLabels).map(labelName => (
+                        {Object.keys(ctx.showLabels).sort().map(labelName => (
                             <div key={labelName} className="flex flex-row items-center justify-between">
                                 <span className="font-mono text-xs truncate">{labelName}</span>
                                 <input type="checkbox" className="ml-2 flex-shrink-0"
@@ -166,52 +143,19 @@ function SettingsPanel() {
 
                     <hr className="border-slate-300" />
 
-                    <CollapsibleSection title="Model Predictions">
-                        {Object.keys(ctx.showModelPredictions).map(modelName => {
-                            const nForces = ctx.numForces[modelName] ?? 0;
-                            const cfg = ctx.forceConfig[modelName];
-                            const names = ctx.forceNames[modelName] ?? [];
-
-                            return (
-                                <div key={modelName} className="flex flex-col space-y-2 pb-3 border-b border-slate-200 last:border-0 last:pb-0">
-                                    <div className="flex flex-row items-center justify-between">
-                                        <span className="font-mono text-xs font-medium truncate" title={modelName}>
-                                            {modelName}
-                                        </span>
-                                        <input type="checkbox" className="ml-2 flex-shrink-0"
-                                            checked={ctx.showModelPredictions[modelName] || false}
-                                            onChange={(e) => handleTogglePrediction(e.target.checked, modelName)}
-                                        />
-                                    </div>
-
-                                    {nForces > 0 && cfg && (
-                                        <div className="flex flex-col space-y-1">
-                                            {Array.from({ length: nForces }).map((_, fi) => (
-                                                <div key={fi} className="flex flex-col p-2 bg-white rounded border border-gray-200 hover:border-blue-400 transition-all">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center space-x-2">
-                                                            <div
-                                                                className="w-3 h-3 rounded-sm flex-shrink-0"
-                                                                style={{ backgroundColor: forceColor(fi) }}
-                                                            />
-                                                            <span className="font-mono text-xs text-gray-700 truncate">
-                                                                {names[fi] ?? `Force ${fi}`}
-                                                            </span>
-                                                        </div>
-                                                        <input
-                                                            type="checkbox"
-                                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 flex-shrink-0"
-                                                            checked={cfg.enabled[fi] ?? true}
-                                                            onChange={(e) => handleForceToggle(modelName, fi, e.target.checked)}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                    {/* Standard predictions */}
+                    <CollapsibleSection title="Predictions">
+                        {Object.keys(ctx.showModelPredictions).sort().map(modelName => (
+                            <div key={modelName} className="flex flex-row items-center justify-between">
+                                <span className="font-mono text-xs truncate" title={modelName}>
+                                    {modelName}
+                                </span>
+                                <input type="checkbox" className="ml-2 flex-shrink-0"
+                                    checked={ctx.showModelPredictions[modelName] || false}
+                                    onChange={(e) => handleTogglePrediction(e.target.checked, modelName)}
+                                />
+                            </div>
+                        ))}
                     </CollapsibleSection>
 
                     <hr className="border-slate-300" />

@@ -1,52 +1,46 @@
 import os
 import pickle
 import numpy as np
-from src.models import Trajectory, TrajectoryStore
+from src.models import Trajectory, BoundingBox, LabelStore, PredictionStore
 
 MAX_FILE_SIZE_GB = float(os.getenv("MAX_FILE_SIZE_GB", "1.0"))
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_GB * 1024 ** 3
 
 
-def _bbox_from_points(points: np.ndarray) -> tuple[float, float, float, float]:
-    """Compute (lat_min, lat_max, lon_min, lon_max) ignoring NaN padding."""
+def _bbox_from_points(points: np.ndarray) -> BoundingBox:
     lats = points[:, 0]
     lons = points[:, 1]
     valid_lats = lats[~np.isnan(lats)]
     valid_lons = lons[~np.isnan(lons)]
     if len(valid_lats) == 0:
-        return (0.0, 0.0, 0.0, 0.0)
-    return (
-        float(valid_lats.min()),
-        float(valid_lats.max()),
-        float(valid_lons.min()),
-        float(valid_lons.max()),
+        return BoundingBox(0.0, 0.0, 0.0, 0.0)
+    return BoundingBox(
+        lat_min=float(valid_lats.min()),
+        lat_max=float(valid_lats.max()),
+        lon_min=float(valid_lons.min()),
+        lon_max=float(valid_lons.max()),
     )
 
 
-def _make_trajectory(points: np.ndarray, forces: np.ndarray | None = None) -> Trajectory:
-    lat_min, lat_max, lon_min, lon_max = _bbox_from_points(points)
+def _make_trajectory(points: np.ndarray) -> Trajectory:
     return Trajectory(
         points=points.astype(np.float32),
-        lat_min=lat_min,
-        lat_max=lat_max,
-        lon_min=lon_min,
-        lon_max=lon_max,
-        forces=forces.astype(np.float32) if forces is not None else None,
+        bbox=_bbox_from_points(points),
     )
 
 
 # ---------------------------------------------------------------------------
-# Predictions  (N, seq_len, 3)  with NaN padding
+# Standard predictions
 # ---------------------------------------------------------------------------
 
-def load_all_predictions(directory: str = "Predictions") -> dict[str, TrajectoryStore]:
-    stores: dict[str, TrajectoryStore] = {}
+def load_all_predictions(directory: str = "Predictions") -> dict[str, PredictionStore]:
+    stores: dict[str, PredictionStore] = {}
 
     if not os.path.exists(directory):
         print(f"Predictions directory '{directory}' not found, skipping.")
         return stores
 
-    for filename in os.listdir(directory):
+    for filename in sorted(os.listdir(directory)):
         if not filename.endswith(".npz"):
             continue
 
@@ -56,7 +50,7 @@ def load_all_predictions(directory: str = "Predictions") -> dict[str, Trajectory
         file_size = os.path.getsize(path)
         if file_size > MAX_FILE_SIZE_BYTES:
             print(
-                f"  Skipping {filename}: {file_size / 1024**3:.2f} GB exceeds limit of {MAX_FILE_SIZE_GB} GB")
+                f"  Skipping {filename}: {file_size / 1024**3:.2f} GB exceeds limit")
             continue
 
         try:
@@ -65,67 +59,51 @@ def load_all_predictions(directory: str = "Predictions") -> dict[str, Trajectory
                 lons = data.get("lons")
                 timestamps = data.get("timestamps")
 
-                if "num_historic_tokens" in data:
-                    raw = data["num_historic_tokens"]
-                    try:
-                        num_historic_tokens = float(raw)
-                    except (ValueError, TypeError):
-                        num_historic_tokens = float(pickle.loads(raw.item()))
-                else:
-                    num_historic_tokens = None
-
-                # Forces: (N, T, F, 2) or missing/empty
-                forces_raw = data.get("forces")
-                has_forces = (
-                    forces_raw is not None
-                    and forces_raw.ndim == 4
-                    and forces_raw.size > 0
-                )
-                num_forces = int(forces_raw.shape[2]) if has_forces else 0
-
                 if lats is None or lons is None or timestamps is None:
                     print(
                         f"  Skipping {filename}: missing lats/lons/timestamps")
                     continue
 
+                if "num_historic_tokens" in data:
+                    raw = data["num_historic_tokens"]
+                    try:
+                        num_historic_tokens = int(float(raw))
+                    except (ValueError, TypeError):
+                        num_historic_tokens = int(
+                            float(pickle.loads(raw.item())))
+                else:
+                    num_historic_tokens = 0
+
                 stacked = np.stack((lats, lons, timestamps), axis=2)
-                n_traj = stacked.shape[0]
+                store = PredictionStore(
+                    name=model_name, num_historic_tokens=num_historic_tokens)
 
-                store = TrajectoryStore(
-                    name=model_name,
-                    num_historic_tokens=num_historic_tokens,
-                    num_forces=num_forces,
-                )
-
-                for i in range(n_traj):
-                    # (T, F, 2)
-                    traj_forces = forces_raw[i] if has_forces else None
-                    store.trajectories.append(
-                        _make_trajectory(stacked[i], traj_forces))
+                for i in range(stacked.shape[0]):
+                    store.trajectories.append(_make_trajectory(stacked[i]))
 
                 stores[model_name] = store
                 print(
-                    f"  Loaded predictions '{model_name}': {n_traj} trajectories, {num_forces} force components")
+                    f"  Loaded predictions '{model_name}': {len(store.trajectories)} trajectories")
 
         except Exception as e:
             print(f"  Error loading {filename}: {e}")
 
     return stores
 
-
 # ---------------------------------------------------------------------------
-# Labels  (flat array + index offsets)
+# Labels
 # ---------------------------------------------------------------------------
 
-def load_all_labels(data_dir: str = "Data/DatasetTraj") -> dict[str, TrajectoryStore]:
-    stores: dict[str, TrajectoryStore] = {}
+
+def load_all_labels(data_dir: str = "Data") -> dict[str, LabelStore]:
+    stores: dict[str, LabelStore] = {}
 
     if not os.path.exists(data_dir):
         print(f"Labels directory '{data_dir}' not found, skipping.")
         return stores
 
-    for filename in os.listdir(data_dir):
-        if not (filename.startswith("label") and filename.endswith(".npz")):
+    for filename in sorted(os.listdir(data_dir)):
+        if not (filename.endswith(".npz")):
             continue
 
         path = os.path.join(data_dir, filename)
@@ -134,7 +112,7 @@ def load_all_labels(data_dir: str = "Data/DatasetTraj") -> dict[str, TrajectoryS
         file_size = os.path.getsize(path)
         if file_size > MAX_FILE_SIZE_BYTES:
             print(
-                f"  Skipping {filename}: {file_size / 1024**3:.2f} GB exceeds limit of {MAX_FILE_SIZE_GB} GB")
+                f"  Skipping {filename}: {file_size / 1024**3:.2f} GB exceeds limit")
             continue
 
         try:
@@ -143,7 +121,7 @@ def load_all_labels(data_dir: str = "Data/DatasetTraj") -> dict[str, TrajectoryS
                 trajectory_idxes: list[int] = pickle.loads(
                     data["trajectory_idxes"].item())
 
-            store = TrajectoryStore(name=dataset_name)
+            store = LabelStore(name=dataset_name)
             split_indices = trajectory_idxes[1:]
             segments = np.split(flat, split_indices)
 

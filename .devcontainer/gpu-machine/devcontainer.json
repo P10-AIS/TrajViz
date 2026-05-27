@@ -26,8 +26,9 @@
 	},
 	"remoteUser": "root",
 	"mounts": [
-		"type=bind,source=/mnt/dataimputationgroup/Crate/Data,target=${containerWorkspaceFolder}/server/Data",
-		"type=bind,source=/mnt/dataimputationgroup/TRAIT/Predictions,target=${containerWorkspaceFolder}/server/Predictions"
+		"type=bind,source=/home/ubuntu/Experiments/Outputs/Datasets,target=${containerWorkspaceFolder}/server/Data",
+		"type=bind,source=/home/ubuntu/Experiments/Outputs/Predictions,target=${containerWorkspaceFolder}/server/Predictions",
+		"type=bind,source=/home/ubuntu/Experiments/Outputs/Images,target=${containerWorkspaceFolder}/server/Images"
 	],
 	"shutdownAction": "none"
 }

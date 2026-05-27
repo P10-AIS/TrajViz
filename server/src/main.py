@@ -1,7 +1,6 @@
 import rasterio
 import json
 import os
-import re
 import io
 from contextlib import asynccontextmanager
 from PIL import Image as PILImage
@@ -11,14 +10,14 @@ import numpy as np
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 
 from src.loader import load_all_predictions, load_all_labels
 from src.index import trajectories_in_viewport
-from src.thinning import thin_trajectory, zoom_to_stride
-from src.models import TrajectoryStore
+from src.thinning import thin_trajectory
+from src.models import LabelStore, PredictionStore
 
 load_dotenv()
 
@@ -26,34 +25,30 @@ load_dotenv()
 # App state
 # ---------------------------------------------------------------------------
 
-prediction_stores: dict[str, TrajectoryStore] = {}
-label_stores: dict[str, TrajectoryStore] = {}
+label_stores: dict[str, LabelStore] = {}
+prediction_stores: dict[str, PredictionStore] = {}
 http_client: httpx.AsyncClient
 
-IMAGES_FOLDER = "Data/Images"
-
-# Placeholder force names until stored in dataset
-FORCE_NAMES = ["Traffic", "Depth", "Current", "Force 4",
-               "Force 5", "Force 6", "Force 7", "Force 8"]
+IMAGES_FOLDER = "Images"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global http_client, prediction_stores, label_stores
-
-    print("Loading predictions...")
-    prediction_stores = load_all_predictions()
+    global http_client, label_stores, prediction_stores, prediction_stores_trait
 
     print("Loading labels...")
     label_stores = load_all_labels()
+
+    print("Loading predictions...")
+    prediction_stores = load_all_predictions()
 
     print("All data loaded.")
 
     http_client = httpx.AsyncClient()
     yield
 
-    prediction_stores.clear()
     label_stores.clear()
+    prediction_stores.clear()
     await http_client.aclose()
 
 
@@ -65,36 +60,84 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _stream_trajectories(store: TrajectoryStore, lat_min, lat_max, lon_min, lon_max, zoom, limit=None):
-    matching = trajectories_in_viewport(
+def _stream_label_trajectories(store: LabelStore, lat_min, lat_max, lon_min, lon_max, zoom, limit=None):
+    indices = trajectories_in_viewport(
         store, lat_min, lat_max, lon_min, lon_max, limit)
+    yield json.dumps({"type": "header", "source": store.name, "total": len(indices)}) + "\n"
 
-    yield json.dumps({"type": "header", "source": store.name, "total": len(matching)}) + "\n"
-
-    stride = zoom_to_stride(zoom)
-
-    for traj, store_idx in matching:
+    for store_idx in indices:
+        traj = store.trajectories[store_idx]
         pts = thin_trajectory(traj.points, zoom)
         if not pts:
             continue
+        yield json.dumps({"type": "traj", "i": store_idx, "pts": pts}) + "\n"
 
-        msg: dict = {"type": "traj", "i": store_idx, "pts": pts}
+    yield json.dumps({"type": "done"}) + "\n"
 
-        # Include forces thinned to same indices as points
-        if traj.forces is not None and traj.forces.size > 0:
-            min_len = min(len(traj.points), len(traj.forces))
-            valid_mask = ~np.isnan(traj.points[:min_len]).any(axis=1)
-            valid_forces = traj.forces[:min_len][valid_mask][::stride]
-            msg["forces"] = valid_forces.tolist()
 
-        yield json.dumps(msg) + "\n"
+def _stream_prediction_trajectories(store: PredictionStore, lat_min, lat_max, lon_min, lon_max, zoom, limit=None):
+    indices = trajectories_in_viewport(
+        store, lat_min, lat_max, lon_min, lon_max, limit)
+    yield json.dumps({"type": "header", "source": store.name, "total": len(indices)}) + "\n"
+
+    for store_idx in indices:
+        traj = store.trajectories[store_idx]
+        pts = thin_trajectory(traj.points, zoom)
+        if not pts:
+            continue
+        yield json.dumps({"type": "traj", "i": store_idx, "pts": pts}) + "\n"
 
     yield json.dumps({"type": "done"}) + "\n"
 
 
 # ---------------------------------------------------------------------------
-# Trajectory endpoints
+# Label endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/labels")
+async def list_labels():
+    return {
+        name: {"count": len(store.trajectories)}
+        for name, store in label_stores.items()
+    }
+
+
+@app.get("/labels/{dataset_name}")
+async def get_labels(
+    dataset_name: str,
+    lat_min: float = Query(...),
+    lat_max: float = Query(...),
+    lon_min: float = Query(...),
+    lon_max: float = Query(...),
+    zoom: int = Query(..., ge=1, le=18),
+    limit: int = Query(default=None, ge=1),
+):
+    store = label_stores.get(dataset_name)
+    if store is None:
+        raise HTTPException(
+            status_code=404, detail=f"Label dataset '{dataset_name}' not found.")
+
+    return StreamingResponse(
+        _stream_label_trajectories(
+            store, lat_min, lat_max, lon_min, lon_max, zoom, limit),
+        media_type="application/x-ndjson",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Prediction endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/predictions")
+async def list_predictions():
+    return {
+        name: {
+            "count": len(store.trajectories),
+            "num_historic_tokens": store.num_historic_tokens,
+        }
+        for name, store in prediction_stores.items()
+    }
+
 
 @app.get("/predictions/{model_name}")
 async def get_predictions(
@@ -112,60 +155,21 @@ async def get_predictions(
             status_code=404, detail=f"Model '{model_name}' not found.")
 
     return StreamingResponse(
-        _stream_trajectories(store, lat_min, lat_max,
-                             lon_min, lon_max, zoom, limit),
+        _stream_prediction_trajectories(
+            store, lat_min, lat_max, lon_min, lon_max, zoom, limit),
         media_type="application/x-ndjson",
     )
 
-
-@app.get("/labels/{dataset_name}")
-async def get_labels(
-    dataset_name: str,
-    lat_min: float = Query(...),
-    lat_max: float = Query(...),
-    lon_min: float = Query(...),
-    lon_max: float = Query(...),
-    zoom: int = Query(..., ge=1, le=18),
-    limit: int = Query(default=None, ge=1),
-):
-    store = label_stores.get(dataset_name)
-    if store is None:
-        raise HTTPException(
-            status_code=404, detail=f"Dataset '{dataset_name}' not found.")
-
-    return StreamingResponse(
-        _stream_trajectories(store, lat_min, lat_max,
-                             lon_min, lon_max, zoom, limit),
-        media_type="application/x-ndjson",
-    )
-
-
-@app.get("/predictions")
-async def list_predictions():
-    return {
-        name: {
-            "count": len(store.trajectories),
-            "num_historic_tokens": store.num_historic_tokens,
-            "num_forces": store.num_forces,
-            "force_names": FORCE_NAMES[:store.num_forces],
-        }
-        for name, store in prediction_stores.items()
-    }
-
-
-@app.get("/labels")
-async def list_labels():
-    return {
-        name: {"count": len(store.trajectories)}
-        for name, store in label_stores.items()
-    }
+# ---------------------------------------------------------------------------
+# Refresh
+# ---------------------------------------------------------------------------
 
 
 @app.get("/refresh")
 async def refresh():
-    global prediction_stores, label_stores
-    prediction_stores = load_all_predictions()
+    global label_stores, prediction_stores
     label_stores = load_all_labels()
+    prediction_stores = load_all_predictions()
     return {"status": "success", "message": "Backend data refreshed."}
 
 
@@ -219,11 +223,9 @@ def get_image(filename: str):
             crs_string = src.crs.to_string()
             transformer = Transformer.from_crs(
                 src.crs, "EPSG:4326", always_xy=True)
-
             left, bottom, right, top = src.bounds
             lon_min, lat_min = transformer.transform(left, bottom)
             lon_max, lat_max = transformer.transform(right, top)
-
             metadata = {
                 "projection": crs_string,
                 "area": {
@@ -231,9 +233,7 @@ def get_image(filename: str):
                     "bottom_left": {"lat": lat_min, "lon": lon_min},
                 },
             }
-
-            data = src.read([1, 2, 3]).transpose(1, 2, 0)  # (H, W, 3)
-
+            data = src.read([1, 2, 3]).transpose(1, 2, 0)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to read GeoTIFF: {e}")
