@@ -3,7 +3,7 @@ import { useMapEvents } from "react-leaflet";
 import { createPortal } from "react-dom";
 import { useAppContext } from "../contexts/AppContext";
 import { useLoadTrajectories } from "../hooks/LoadTrajectoriesHook";
-import type { RawPoint, RawTrajectory } from "../utils/draw";
+import type { RawPoint, RawTrajectory } from "../types/Raw";
 
 const DEBOUNCE_MS = 150;
 
