@@ -3,7 +3,8 @@ export type RawPoint = [number, number, number];
 // A single trajectory is an array of points
 export type RawTrajectory = RawPoint[];
 
-export interface RawBeam {
-    pts: number[][];
-    score: number | null;  // null = pruned beam
-}
+
+export type RawPrediction = {
+    pts: RawTrajectory;
+    cutoff: number | null;
+};

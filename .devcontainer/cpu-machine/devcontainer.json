@@ -25,5 +25,10 @@
 		}
 	},
 	"remoteUser": "root",
+	"mounts": [
+		"type=bind,source=/Users/williamwoldum/Downloads/Outputs/Datasets,target=${containerWorkspaceFolder}/server/Data",
+		"type=bind,source=/Users/williamwoldum/Downloads/Outputs/Predictions,target=${containerWorkspaceFolder}/server/Predictions",
+		"type=bind,source=/Users/williamwoldum/Downloads/Outputs/Images,target=${containerWorkspaceFolder}/server/Images"
+	],
 	"shutdownAction": "none"
 }

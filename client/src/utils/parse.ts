@@ -1,4 +1,3 @@
-import type { TimePoint } from "../types/Point";
 import { getBoundingBox } from "./bounds";
 
 type RawMultiPolygon = number[][][][];
@@ -18,15 +17,6 @@ export type ParsedPolygon = {
         points: { lat: number; lng: number }[];
     }[];
 };
-
-export type ParsedTrajectory = {
-    trajectoryId: number;
-    numHistoricTokens: number | null;
-    padding: boolean[];
-    points: TimePoint[];
-    boundingBox: { minLat: number; minLng: number; maxLat: number; maxLng: number };
-}
-
 
 export function parseMultiPolygon(data: RawMultiPolygon): ParsedPolygon[] {
     return data.map((polygon) => {
@@ -50,25 +40,3 @@ export function parseMultiPolygon(data: RawMultiPolygon): ParsedPolygon[] {
         };
     });
 }
-
-export function parsePoints(data: RawPoints): ParsedTrajectory[] {
-    const predictions = data.points.map((pred, idx) => {
-        const padding = pred.map(pt => (pt[0] === undefined || pt[0] === null));
-        const points = pred.map(pt => ({
-            lat: pt[0],
-            lng: pt[1],
-            timestamp: pt[2]
-        }));
-
-        return {
-            trajectoryId: idx,
-            numHistoricTokens: data.num_historic_tokens,
-            padding,
-            points,
-            boundingBox: getBoundingBox(points),
-        };
-    });
-
-    return predictions;
-}
-

@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useAppContext } from "../contexts/AppContext";
-import type { RawTrajectory } from "../types/Raw";
+import type { RawTrajectory, RawPrediction } from "../types/Raw";
 
 export interface Viewport {
     latMin: number;
@@ -12,9 +12,8 @@ export interface Viewport {
 
 const BATCH_SIZE = 50;
 
-async function streamTrajectories(
+async function streamLabelTrajectories(
     url: string,
-    onHeader: (source: string, total: number) => void,
     onTrajectory: (pts: RawTrajectory, idx: number) => void,
     signal: AbortSignal,
 ): Promise<void> {
@@ -39,8 +38,7 @@ async function streamTrajectories(
             if (!trimmed) continue;
             try {
                 const msg = JSON.parse(trimmed);
-                if (msg.type === "header") onHeader(msg.source, msg.total);
-                else if (msg.type === "traj") onTrajectory(msg.pts, msg.i);
+                if (msg.type === "traj") onTrajectory(msg.pts, msg.i);
             } catch {
                 console.warn("Failed to parse NDJSON line:", trimmed);
             }
@@ -48,6 +46,41 @@ async function streamTrajectories(
     }
 }
 
+async function streamPredictionTrajectories(
+    url: string,
+    onTrajectory: (pts: RawTrajectory, idx: number, cutoff: number | null) => void,
+    signal: AbortSignal,
+): Promise<void> {
+    const response = await fetch(url, { signal });
+    if (!response.ok) throw new Error(`Stream request failed: ${response.status}`);
+    if (!response.body) throw new Error("No response body");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+                const msg = JSON.parse(trimmed);
+                if (msg.type === "traj") {
+                    onTrajectory(msg.pts, msg.i, msg.num_historic_tokens ?? null);
+                }
+            } catch {
+                console.warn("Failed to parse NDJSON line:", trimmed);
+            }
+        }
+    }
+}
 
 function buildQuery(vp: Viewport, density: number, totalCount: number, fullFidelity: boolean): string {
     const limit = Math.max(1, Math.ceil(totalCount * density));
@@ -103,7 +136,7 @@ export function useLoadTrajectories() {
             const query = buildQuery(viewport, trajectoryDensity, predRes[modelName].count, fullFidelity);
 
             const receivedIds = new Set<number>();
-            const trajBatch = new Map<number, RawTrajectory>();
+            const trajBatch = new Map<number, RawPrediction>();
 
             const flush = () => {
                 if (trajBatch.size === 0) return;
@@ -112,17 +145,16 @@ export function useLoadTrajectories() {
 
                 setModelPredictions(prev => {
                     const next = new Map(prev[modelName] ?? []);
-                    for (const [idx, pts] of trajSnap) next.set(idx, pts);
+                    for (const [idx, prediction] of trajSnap) next.set(idx, prediction);
                     return { ...prev, [modelName]: next };
                 });
             };
 
-            streamTrajectories(
+            streamPredictionTrajectories(
                 `/api/predictions/${modelName}?${query}`,
-                (_source, _total) => { },
-                (pts, idx) => {
+                (pts, idx, cutoff) => {
                     receivedIds.add(idx);
-                    trajBatch.set(idx, pts);
+                    trajBatch.set(idx, { pts, cutoff });
                     if (trajBatch.size >= BATCH_SIZE) flush();
                 },
                 controller.signal,
@@ -162,9 +194,8 @@ export function useLoadTrajectories() {
                 });
             };
 
-            streamTrajectories(
+            streamLabelTrajectories(
                 `/api/labels/${datasetName}?${query}`,
-                (_source, _total) => { },
                 (pts, idx) => {
                     receivedIds.add(idx);
                     batch.set(idx, pts);

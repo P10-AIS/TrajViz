@@ -61,15 +61,6 @@ function DataLoader({ children }: { children: JSX.Element }) {
                     }
                     return Object.keys(updates).length ? { ...prev, ...updates } : prev;
                 });
-
-                // Historic horizon
-                ctx.setNumHistoricTokens(prev => {
-                    const updates: Record<string, number | null> = {};
-                    for (const name of Object.keys(predRes)) {
-                        if (!(name in prev)) updates[name] = predRes[name].num_historic_tokens ?? null;
-                    }
-                    return Object.keys(updates).length ? { ...prev, ...updates } : prev;
-                });
             } catch (err) {
                 console.error("Failed to discover model/dataset names:", err);
             }

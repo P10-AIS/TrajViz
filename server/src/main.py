@@ -67,7 +67,7 @@ def _stream_label_trajectories(store: LabelStore, lat_min, lat_max, lon_min, lon
 
     for store_idx in indices:
         traj = store.trajectories[store_idx]
-        pts = thin_trajectory(traj.points, zoom)
+        pts, _ = thin_trajectory(traj.points, zoom)
         if not pts:
             continue
         yield json.dumps({"type": "traj", "i": store_idx, "pts": pts}) + "\n"
@@ -82,10 +82,16 @@ def _stream_prediction_trajectories(store: PredictionStore, lat_min, lat_max, lo
 
     for store_idx in indices:
         traj = store.trajectories[store_idx]
-        pts = thin_trajectory(traj.points, zoom)
+        pts, cutoff = thin_trajectory(
+            traj.points, zoom, store.num_historic_tokens)
         if not pts:
             continue
-        yield json.dumps({"type": "traj", "i": store_idx, "pts": pts}) + "\n"
+        yield json.dumps({
+            "type": "traj",
+            "i": store_idx,
+            "pts": pts,
+            "num_historic_tokens": cutoff,
+        }) + "\n"
 
     yield json.dumps({"type": "done"}) + "\n"
 

@@ -13,9 +13,6 @@ import TileLayer32617 from './components/TileLayer32617';
 import { Projection } from './types/projection';
 import ViewPanel from './components/ViewPanel';
 
-// If `pinned` is non-empty for this key, only those indices are drawn;
-// otherwise everything draws. Computed straight from the data's own keys —
-// no dependency on viewport, so pan/zoom/streaming never change the result.
 function resolveHiddenSet(
   allIndices: Iterable<number>,
   pinned: Set<number> | undefined,
@@ -90,7 +87,6 @@ function App() {
                   predictions,
                   hidden,
                   appCtx.showTrajectoryDots,
-                  appCtx.numHistoricTokens[modelName] ?? null,
                   info,
                   appCtx.drawConfig,
                 );

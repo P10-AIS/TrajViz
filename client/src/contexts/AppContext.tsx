@@ -5,7 +5,7 @@ import type { DrawConfig } from '../types/DrawConfig';
 import { Projection } from '../types/projection';
 import type { ImageOpacities } from '../types/Opacity';
 import { useLocalStorageState } from '../hooks/LocalStorageState';
-import type { RawTrajectory } from '../types/Raw';
+import type { RawTrajectory, RawPrediction } from '../types/Raw';
 
 export interface AppContextType {
     polygonsDK: Polygon[];
@@ -29,8 +29,11 @@ export interface AppContextType {
     showModelPredictions: Record<string, boolean>;
     setShowModelPredictions: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 
-    modelPredictions: Record<string, Map<number, RawTrajectory>>;
-    setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, Map<number, RawTrajectory>>>>;
+    // Each prediction now carries its own historic/prediction cutoff
+    // alongside its points, since thinning recomputes indices per
+    // trajectory. There is no separate per-model cutoff map anymore.
+    modelPredictions: Record<string, Map<number, RawPrediction>>;
+    setModelPredictions: React.Dispatch<React.SetStateAction<Record<string, Map<number, RawPrediction>>>>;
 
     showLabels: Record<string, boolean>;
     setShowLabels: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
@@ -71,9 +74,6 @@ export interface AppContextType {
     center: [number, number];
     setCenter: (latlng: [number, number]) => void;
 
-    numHistoricTokens: Record<string, number | null>;
-    setNumHistoricTokens: React.Dispatch<React.SetStateAction<Record<string, number | null>>>;
-
     modelPredictionsInView: Record<string, Set<number>>;
     setModelPredictionsInView: React.Dispatch<React.SetStateAction<Record<string, Set<number>>>>;
 
@@ -111,7 +111,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [zoom, setZoom] = useLocalStorageState("zoom", 5);
     const [center, setCenter] = useLocalStorageState<[number, number]>("center", [56.15674, 10.21076]);
     const [imageOpacities, setImageOpacities] = useLocalStorageState("imageOpacities", {});
-    const [numHistoricTokens, setNumHistoricTokens] = useLocalStorageState("numHistoricTokens", {});
     const [drawConfig, setDrawConfig] = useLocalStorageState<DrawConfig>("drawConfig", {
         colors: {
             label: "rgba(0,100,255)",
@@ -134,7 +133,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
 
     const [polygonsDK, setPolygonsDK] = useState<Polygon[]>([]);
     const [polygonsUS, setPolygonsUS] = useState<Polygon[]>([]);
-    const [modelPredictions, setModelPredictions] = useState<Record<string, Map<number, RawTrajectory>>>({});
+    const [modelPredictions, setModelPredictions] = useState<Record<string, Map<number, RawPrediction>>>({});
     const [numBeams, setNumBeams] = useState<Record<string, number>>({});
     const [labels, setLabels] = useState<Record<string, Map<number, RawTrajectory>>>({});
     const [shipSizeGuideImage, setShipSizeGuideImage] = useState<HTMLImageElement | null>(null);
@@ -186,7 +185,6 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         showImageOverlay, setShowImageOverlay,
         zoom, setZoom,
         center, setCenter,
-        numHistoricTokens, setNumHistoricTokens,
         modelPredictionsInView, setModelPredictionsInView,
         labelsInView, setLabelsInView,
         pinnedTrajectories, setPinnedTrajectories, togglePinnedTrajectory, clearPinnedTrajectories,

@@ -3,7 +3,7 @@ import type { GeoImage } from "../types/GeoImage";
 import type { Polygon } from "../types/Polygon";
 import type { Bound } from "../types/Bound";
 import type { DrawInfo } from "../components/CanvasLayer";
-import type { RawTrajectory } from "../types/Raw";
+import type { RawTrajectory, RawPrediction } from "../types/Raw";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -38,7 +38,7 @@ function viewBox(map: L.Map): Bound {
 
 export function drawTrajectories(
   trajectories: Map<number, RawTrajectory>,
-  disabled: Set<number>,
+  hidden: Set<number>,
   showDots: boolean,
   info: DrawInfo,
   config: DrawConfig,
@@ -54,7 +54,7 @@ export function drawTrajectories(
   const offset = config.radiusScale * 0.75;
 
   for (const [idx, traj] of trajectories.entries()) {
-    if (disabled.has(idx)) continue;
+    if (hidden.has(idx)) continue;
     if (!traj || traj.length === 0) continue;
 
     const pts = traj.map(([lat, lon]) => {
@@ -88,10 +88,9 @@ export function drawTrajectories(
 // ---------------------------------------------------------------------------
 
 export function drawPredictions(
-  predictions: Map<number, RawTrajectory>,
-  disabled: Set<number>,
+  predictions: Map<number, RawPrediction>,
+  hidden: Set<number>,
   showDots: boolean,
-  num_historic_tokens: number | null,
   info: DrawInfo,
   config: DrawConfig,
 ) {
@@ -107,8 +106,9 @@ export function drawPredictions(
   const markerSize = config.radiusScale * 1.5;
   const offset = config.radiusScale * 0.75;
 
-  for (const [idx, traj] of predictions.entries()) {
-    if (disabled.has(idx)) continue;
+  for (const [idx, prediction] of predictions.entries()) {
+    if (hidden.has(idx)) continue;
+    const { pts: traj, cutoff } = prediction;
     if (!traj || traj.length === 0) continue;
 
     const pts = traj.map(([lat, lon, ts]) => {
@@ -116,11 +116,14 @@ export function drawPredictions(
       return { x: p.x, y: p.y, ts };
     });
 
-    const cutoff = num_historic_tokens ? num_historic_tokens - 1 : null;
+    // cutoff is the count of historic points for THIS trajectory (already
+    // re-derived post-thinning on the backend), not a shared model-wide
+    // index — so it stays correct regardless of how this trajectory thinned.
+    const cutoffIdx = cutoff ? cutoff - 1 : null;
 
     ctx.lineWidth = config.lineWidthScale;
     for (let i = 1; i < pts.length; i++) {
-      ctx.strokeStyle = cutoff !== null && i <= cutoff
+      ctx.strokeStyle = cutoffIdx !== null && i <= cutoffIdx
         ? config.colors.label : config.colors.prediction;
       ctx.beginPath();
       ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
@@ -131,7 +134,7 @@ export function drawPredictions(
     if (zoom >= config.dotsZoom && showDots) {
       const s = config.radiusScale * 2;
       for (let i = 0; i < pts.length; i++) {
-        ctx.fillStyle = cutoff !== null && i <= cutoff
+        ctx.fillStyle = cutoffIdx !== null && i <= cutoffIdx
           ? config.colors.label : config.colors.prediction;
         ctx.fillRect(pts[i].x - s / 2, pts[i].y - s / 2, s, s);
       }

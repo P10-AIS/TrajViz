@@ -93,11 +93,10 @@ export default function MapController() {
   }, [map]);
 
   // Recompute which trajectories are in view. This is purely informational
-  // (e.g. for ViewPanel/snapshot display) — it no longer mutates
-  // disabledTrajectories. Drawing visibility is handled entirely by
-  // disabledTrajectories / focusedTrajectories in App.tsx, independent of
-  // viewport, so panning/zooming/streaming can never change what's drawn
-  // for a focused or manually-disabled trajectory.
+  // (e.g. for PinPanel) — it does not affect what's drawn. Drawing
+  // visibility is handled entirely by pinnedTrajectories in App.tsx,
+  // independent of viewport, so panning/zooming/streaming can never change
+  // what's drawn for a pinned trajectory.
   const updateInView = useCallback(() => {
     const bounds = map.getBounds();
     const latMin = bounds.getSouth();
@@ -108,8 +107,8 @@ export default function MapController() {
     const predInView: Record<string, Set<number>> = {};
     for (const [modelName, trajs] of Object.entries(modelPredictions)) {
       predInView[modelName] = new Set();
-      for (const [idx, traj] of trajs.entries()) {
-        if (trajectoryIntersectsView(traj, latMin, latMax, lonMin, lonMax)) {
+      for (const [idx, prediction] of trajs.entries()) {
+        if (trajectoryIntersectsView(prediction.pts, latMin, latMax, lonMin, lonMax)) {
           predInView[modelName].add(idx);
         }
       }
