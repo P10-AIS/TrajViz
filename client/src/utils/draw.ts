@@ -116,7 +116,7 @@ export function drawPredictions(
       return { x: p.x, y: p.y, ts };
     });
 
-    const cutoff = num_historic_tokens ?? null;
+    const cutoff = num_historic_tokens ? num_historic_tokens - 1 : null;
 
     ctx.lineWidth = config.lineWidthScale;
     for (let i = 1; i < pts.length; i++) {
