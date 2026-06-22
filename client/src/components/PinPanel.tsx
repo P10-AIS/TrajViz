@@ -6,7 +6,7 @@ function PinPanel() {
     const appCtx = useAppContext();
     const [hidden, setHidden] = useState(true);
 
-    function handleToggle(key: string, idx: number, pinned: boolean) {
+    function handleToggle(key: string, idx: number, _: boolean) {
         appCtx.togglePinnedTrajectory(key, idx);
     }
 

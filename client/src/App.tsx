@@ -2,7 +2,6 @@ import Map3034 from './components/Map3034';
 import { drawGeoImage, drawPolygons, drawPredictions, drawTrajectories, drawShipCursor } from './utils/draw';
 import CanvasLayer from './components/CanvasLayer';
 import SettingsPanel from './components/SettingsPanel';
-import PinPanel from './components/PinPanel';
 import { useAppContext } from './contexts/AppContext';
 import DataLoader from './components/DataLoader';
 import TileLayer3034 from './components/TileLayer3034';
