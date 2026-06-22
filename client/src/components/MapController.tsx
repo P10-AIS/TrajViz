@@ -30,7 +30,6 @@ export default function MapController() {
     labels,
     setModelPredictionsInView,
     setLabelsInView,
-    setDisabledTrajectories,
   } = useAppContext();
 
   const loadTrajectories = useLoadTrajectories();
@@ -93,6 +92,12 @@ export default function MapController() {
     }, DEBOUNCE_MS);
   }, [map]);
 
+  // Recompute which trajectories are in view. This is purely informational
+  // (e.g. for ViewPanel/snapshot display) — it no longer mutates
+  // disabledTrajectories. Drawing visibility is handled entirely by
+  // disabledTrajectories / focusedTrajectories in App.tsx, independent of
+  // viewport, so panning/zooming/streaming can never change what's drawn
+  // for a focused or manually-disabled trajectory.
   const updateInView = useCallback(() => {
     const bounds = map.getBounds();
     const latMin = bounds.getSouth();
@@ -121,26 +126,7 @@ export default function MapController() {
       }
     }
     setLabelsInView(labelsInView);
-
-    // Auto-disable newly visible trajectories if any are already disabled
-    setDisabledTrajectories(prev => {
-      const next = { ...prev };
-      let changed = false;
-      for (const [key, inViewIds] of Object.entries({ ...predInView, ...labelsInView })) {
-        const currentlyDisabled = prev[key];
-        if (!currentlyDisabled || currentlyDisabled.size === 0) continue;
-        const updatedDisabled = new Set(currentlyDisabled);
-        for (const idx of inViewIds) {
-          if (!currentlyDisabled.has(idx)) {
-            updatedDisabled.add(idx);
-            changed = true;
-          }
-        }
-        next[key] = updatedDisabled;
-      }
-      return changed ? next : prev;
-    });
-  }, [map, modelPredictions, labels, setModelPredictionsInView, setLabelsInView, setDisabledTrajectories]);
+  }, [map, modelPredictions, labels, setModelPredictionsInView, setLabelsInView]);
 
   // Press C to log current viewport + mouse coords to console
   useEffect(() => {

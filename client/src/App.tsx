@@ -2,6 +2,7 @@ import Map3034 from './components/Map3034';
 import { drawGeoImage, drawPolygons, drawPredictions, drawTrajectories, drawShipCursor } from './utils/draw';
 import CanvasLayer from './components/CanvasLayer';
 import SettingsPanel from './components/SettingsPanel';
+import PinPanel from './components/PinPanel';
 import { useAppContext } from './contexts/AppContext';
 import DataLoader from './components/DataLoader';
 import TileLayer3034 from './components/TileLayer3034';
@@ -11,6 +12,21 @@ import TileLayer3857 from './components/TileLayer3857';
 import TileLayer32617 from './components/TileLayer32617';
 import { Projection } from './types/projection';
 import ViewPanel from './components/ViewPanel';
+
+// If `pinned` is non-empty for this key, only those indices are drawn;
+// otherwise everything draws. Computed straight from the data's own keys —
+// no dependency on viewport, so pan/zoom/streaming never change the result.
+function resolveHiddenSet(
+  allIndices: Iterable<number>,
+  pinned: Set<number> | undefined,
+): Set<number> {
+  if (!pinned || pinned.size === 0) return new Set();
+  const hidden = new Set<number>();
+  for (const idx of allIndices) {
+    if (!pinned.has(idx)) hidden.add(idx);
+  }
+  return hidden;
+}
 
 function App() {
   const appCtx = useAppContext();
@@ -54,29 +70,31 @@ function App() {
 
             {Object.entries(appCtx.labels).map(([labelName, trajectories]) => (
               appCtx.showLabels[labelName] &&
-              <CanvasLayer key={labelName} zIndex={4} drawMethod={(info) =>
+              <CanvasLayer key={labelName} zIndex={4} drawMethod={(info) => {
+                const hidden = resolveHiddenSet(trajectories.keys(), appCtx.pinnedTrajectories[labelName]);
                 drawTrajectories(
                   trajectories,
-                  appCtx.disabledTrajectories[labelName] ?? new Set(),
+                  hidden,
                   appCtx.showTrajectoryDots,
                   info,
                   appCtx.drawConfig,
-                )
-              } />
+                );
+              }} />
             ))}
 
             {Object.entries(appCtx.modelPredictions).map(([modelName, predictions]) => (
               appCtx.showModelPredictions[modelName] &&
-              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) =>
+              <CanvasLayer key={modelName} zIndex={5} drawMethod={(info) => {
+                const hidden = resolveHiddenSet(predictions.keys(), appCtx.pinnedTrajectories[modelName]);
                 drawPredictions(
                   predictions,
-                  appCtx.disabledTrajectories[modelName] ?? new Set(),
+                  hidden,
                   appCtx.showTrajectoryDots,
                   appCtx.numHistoricTokens[modelName] ?? null,
                   info,
                   appCtx.drawConfig,
-                )
-              } />
+                );
+              }} />
             ))}
 
             {appCtx.enableShipSizeGuide &&

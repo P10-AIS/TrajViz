@@ -16,6 +16,20 @@ function CanvasLayer({ drawMethod, zIndex = 0 }: CanvasLayerProps) {
   const map = useMap();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Always call the latest drawMethod without making it an effect dependency.
+  const drawMethodRef = useRef(drawMethod);
+  useEffect(() => {
+    drawMethodRef.current = drawMethod;
+    // A new drawMethod means new data/closure (e.g. streaming flush, focus
+    // toggle) — repaint immediately with it instead of waiting for the next
+    // map "move" event.
+    if (canvasRef.current) {
+      drawMethodRef.current({ map, canvas: canvasRef.current });
+    }
+  }, [drawMethod, map]);
+
+  // Canvas DOM node lifecycle: created once per mount, only torn down on
+  // unmount or if zIndex actually changes. Never depends on drawMethod.
   useEffect(() => {
     const canvas = L.DomUtil.create("canvas", "leaflet-canvas-layer");
     canvas.style.position = "absolute";
@@ -30,7 +44,7 @@ function CanvasLayer({ drawMethod, zIndex = 0 }: CanvasLayerProps) {
 
     const redraw = () => {
       if (!canvasRef.current) return;
-      drawMethod({ map, canvas: canvasRef.current });
+      drawMethodRef.current({ map, canvas: canvasRef.current });
     };
 
     const resizeCanvas = () => {
@@ -50,12 +64,10 @@ function CanvasLayer({ drawMethod, zIndex = 0 }: CanvasLayerProps) {
     return () => {
       map.off("move", redraw);
       map.off("resize", resizeCanvas);
-
-      if (canvasRef.current) {
-        mapContainer.removeChild(canvasRef.current);
-      }
+      mapContainer.removeChild(canvas);
+      canvasRef.current = null;
     };
-  }, [map, drawMethod]);
+  }, [map, zIndex]);
 
   return null;
 }

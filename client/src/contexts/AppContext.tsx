@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type JSX } from 'react';
+import { createContext, useCallback, useContext, useState, type JSX } from 'react';
 import type { Polygon } from '../types/Polygon';
 import type { GeoImage } from '../types/GeoImage';
 import type { DrawConfig } from '../types/DrawConfig';
@@ -80,8 +80,15 @@ export interface AppContextType {
     labelsInView: Record<string, Set<number>>;
     setLabelsInView: React.Dispatch<React.SetStateAction<Record<string, Set<number>>>>;
 
-    disabledTrajectories: Record<string, Set<number>>;
-    setDisabledTrajectories: React.Dispatch<React.SetStateAction<Record<string, Set<number>>>>;
+    // ── Pinned trajectories ─────────────────────────────────────────────
+    // Single mechanism for trajectory visibility filtering. If a key has a
+    // non-empty Set here, ONLY those indices are drawn for that key. If a
+    // key has no pins (or an empty set), everything draws for that key.
+    // Independent of viewport — panning/zooming/streaming never changes it.
+    pinnedTrajectories: Record<string, Set<number>>;
+    setPinnedTrajectories: React.Dispatch<React.SetStateAction<Record<string, Set<number>>>>;
+    togglePinnedTrajectory: (key: string, idx: number) => void;
+    clearPinnedTrajectories: (key: string) => void;
 
     numBeams: Record<string, number>;
     setNumBeams: React.Dispatch<React.SetStateAction<Record<string, number>>>;
@@ -135,23 +142,25 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
     const [modelPredictionsInView, setModelPredictionsInView] = useState<Record<string, Set<number>>>({});
     const [labelsInView, setLabelsInView] = useState<Record<string, Set<number>>>({});
 
-    const [disabledTrajectoriesRaw, setDisabledTrajectoriesRaw] = useLocalStorageState<Record<string, number[]>>("disabledTrajectories", {});
+    // In-memory only — pinning is a transient "what I'm looking at right
+    // now" state, not something that should silently persist across reloads.
+    const [pinnedTrajectories, setPinnedTrajectories] = useState<Record<string, Set<number>>>({});
 
-    const disabledTrajectories = useMemo(() =>
-        Object.fromEntries(
-            Object.entries(disabledTrajectoriesRaw).map(([k, v]) => [k, new Set<number>(v)])
-        ), [disabledTrajectoriesRaw]
-    );
+    const togglePinnedTrajectory = useCallback((key: string, idx: number) => {
+        setPinnedTrajectories(prev => {
+            const current = new Set(prev[key] ?? []);
+            if (current.has(idx)) current.delete(idx);
+            else current.add(idx);
+            return { ...prev, [key]: current };
+        });
+    }, []);
 
-    const setDisabledTrajectories: React.Dispatch<React.SetStateAction<Record<string, Set<number>>>> = useCallback((action) => {
-        setDisabledTrajectoriesRaw(prev => {
-            const prevAsSets = Object.fromEntries(
-                Object.entries(prev).map(([k, v]) => [k, new Set<number>(v)])
-            );
-            const next = typeof action === 'function' ? action(prevAsSets) : action;
-            return Object.fromEntries(
-                Object.entries(next).map(([k, v]) => [k, Array.from(v)])
-            );
+    const clearPinnedTrajectories = useCallback((key: string) => {
+        setPinnedTrajectories(prev => {
+            if (!prev[key] || prev[key].size === 0) return prev;
+            const next = { ...prev };
+            next[key] = new Set();
+            return next;
         });
     }, []);
 
@@ -180,7 +189,7 @@ export const AppProvider = ({ children }: { children: JSX.Element }) => {
         numHistoricTokens, setNumHistoricTokens,
         modelPredictionsInView, setModelPredictionsInView,
         labelsInView, setLabelsInView,
-        disabledTrajectories, setDisabledTrajectories,
+        pinnedTrajectories, setPinnedTrajectories, togglePinnedTrajectory, clearPinnedTrajectories,
         numBeams, setNumBeams,
     };
 

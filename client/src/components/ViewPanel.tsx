@@ -1,5 +1,5 @@
 import SceneManager from "./SceneManager";
-import InViewPanel from "./InViewPanel";
+import PinPanel from "./PinPanel";
 
 export default function ViewPanel() {
     return (
@@ -9,7 +9,7 @@ export default function ViewPanel() {
                 <SceneManager />
             </div>
             <div className="pointer-events-auto">
-                <InViewPanel />
+                <PinPanel />
             </div>
         </div>
     );
